@@ -1,5 +1,10 @@
 -- Venture Academy Tutors v2 — initial schema
 -- Enums, tables, derived-status views, RLS policies, and the new-user trigger.
+-- Wrapped in an explicit transaction so a failure partway through (e.g. a
+-- statement ordering bug) rolls back everything instead of leaving some
+-- tables/policies created and others missing.
+
+begin;
 
 -- ---------------------------------------------------------------------------
 -- Enums
@@ -65,20 +70,9 @@ create trigger on_auth_user_created
 create policy "profiles_select" on profiles
   for select using (id = auth.uid() or auth_role() = 'admin');
 
--- Lets a tutor read a parent's profile (display name + email) only once
--- they have an approved claim against that parent's tutee — this is what
--- makes `tutor_visible_contacts` actually return rows for the tutor side of
--- the join, without opening `profiles` up to all tutors broadly.
-create policy "profiles_select_approved_tutor" on profiles
-  for select using (
-    id in (
-      select t.parent_id
-      from claims c
-      join availability_slots s on s.id = c.slot_id
-      join tutees t on t.id = s.tutee_id
-      where c.tutor_id = auth.uid() and c.status = 'approved'
-    )
-  );
+-- Note: a second `profiles` select policy (`profiles_select_approved_tutor`)
+-- is added further down, after `tutees`/`availability_slots`/`claims`
+-- exist — it references all three, so it can't be created this early.
 
 create policy "profiles_update_self_or_admin" on profiles
   for update using (id = auth.uid() or auth_role() = 'admin');
@@ -261,6 +255,23 @@ create policy "claims_update_tutor_cancel" on claims
 
 -- No delete policy for anyone — claim rows are immutable audit history.
 
+-- Lets a tutor read a parent's profile (display name + email) only once
+-- they have an approved claim against that parent's tutee — this is what
+-- makes `tutor_visible_contacts` actually return rows for the tutor side of
+-- the join, without opening `profiles` up to all tutors broadly. Defined
+-- here (not alongside profiles' other policies) because it depends on
+-- `tutees`, `availability_slots`, and `claims` all existing first.
+create policy "profiles_select_approved_tutor" on profiles
+  for select using (
+    id in (
+      select t.parent_id
+      from claims c
+      join availability_slots s on s.id = c.slot_id
+      join tutees t on t.id = s.tutee_id
+      where c.tutor_id = auth.uid() and c.status = 'approved'
+    )
+  );
+
 -- ---------------------------------------------------------------------------
 -- Derived status view — drives the StatusTrack UI. 'approved' is displayed
 -- as "Booked" in the app; kept as 'approved' here to match the enum.
@@ -298,3 +309,5 @@ join availability_slots s on s.id = c.slot_id
 join tutees t on t.id = s.tutee_id
 join profiles p on p.id = t.parent_id
 where c.status = 'approved';
+
+commit;
