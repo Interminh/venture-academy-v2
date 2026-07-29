@@ -66,7 +66,7 @@ export function IntakeForm({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <Label htmlFor="firstName">Student's first name</Label>
+          <Label htmlFor="firstName">Student&apos;s first name</Label>
           <Input
             id="firstName"
             name="firstName"

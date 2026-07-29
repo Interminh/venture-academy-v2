@@ -22,7 +22,7 @@ export default async function ParentDashboardPage() {
     return (
       <div className="text-center">
         <h1 className="font-heading text-2xl font-bold text-ink">My students</h1>
-        <p className="mt-2 text-body">You haven't added a student yet.</p>
+        <p className="mt-2 text-body">You haven&apos;t added a student yet.</p>
         <ButtonLink href="/dashboard/parent/intake" className="mt-6">
           Add your first student
         </ButtonLink>

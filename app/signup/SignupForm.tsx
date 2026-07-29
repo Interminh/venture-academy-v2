@@ -37,7 +37,7 @@ export function SignupForm() {
         {pending ? "Creating account…" : "Create account"}
       </Button>
       <p className="text-center text-xs text-gray-400">
-        We only ever ask for what's above, then your student's tutoring
+        We only ever ask for what&apos;s above, then your student&apos;s tutoring
         needs — nothing else.
       </p>
       <p className="text-center text-sm text-body">

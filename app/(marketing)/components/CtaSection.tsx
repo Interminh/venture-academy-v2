@@ -7,7 +7,7 @@ export function CtaSection() {
         Ready to get started?
       </h2>
       <p className="mx-auto mt-3 max-w-md text-body">
-        It takes a few minutes to sign up, and it's completely free.
+        It takes a few minutes to sign up, and it&apos;s completely free.
       </p>
       <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
         <ButtonLink href="/signup">Sign up your student</ButtonLink>

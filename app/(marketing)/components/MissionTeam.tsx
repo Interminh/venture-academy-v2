@@ -35,7 +35,7 @@ export function MissionTeam() {
             <h2 className="font-heading text-lg font-bold text-ink">Our mission</h2>
             <p className="mt-2 text-sm text-body">
               We work to ensure academic success for every student we
-              tutor — especially those who can't otherwise access
+              tutor — especially those who can&apos;t otherwise access
               supplementary education.
             </p>
           </div>
