@@ -2,6 +2,9 @@
 // Supabase project exists. Once connected, regenerate with:
 //   npx supabase gen types typescript --project-id <ref> > lib/types/database.ts
 // and this file (including this comment) will be overwritten — that's expected.
+// `Relationships: []` on every table/view isn't real FK metadata, just what
+// @supabase/postgrest-js's GenericTable/GenericView types require to be
+// structurally valid — harmless as an empty array until regenerated.
 
 export type UserRole = "admin" | "tutor" | "parent";
 export type ClaimStatus = "pending" | "approved" | "rejected" | "cancelled";
@@ -31,6 +34,7 @@ export interface Database {
           display_name: string;
           email: string;
         }>;
+        Relationships: [];
       };
       subjects: {
         Row: {
@@ -49,6 +53,7 @@ export interface Database {
           name: string;
           is_active: boolean;
         }>;
+        Relationships: [];
       };
       tutees: {
         Row: {
@@ -72,6 +77,15 @@ export interface Database {
           grade: number;
           notes: string | null;
         }>;
+        Relationships: [
+          {
+            foreignKeyName: "tutees_parent_id_fkey";
+            columns: ["parent_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       tutee_subjects: {
         Row: {
@@ -90,6 +104,22 @@ export interface Database {
           tutee_id: string;
           subject_id: string;
         }>;
+        Relationships: [
+          {
+            foreignKeyName: "tutee_subjects_tutee_id_fkey";
+            columns: ["tutee_id"];
+            isOneToOne: false;
+            referencedRelation: "tutees";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tutee_subjects_subject_id_fkey";
+            columns: ["subject_id"];
+            isOneToOne: false;
+            referencedRelation: "subjects";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       availability_slots: {
         Row: {
@@ -114,6 +144,22 @@ export interface Database {
           day: Weekday;
           start_time: string;
         }>;
+        Relationships: [
+          {
+            foreignKeyName: "availability_slots_tutee_id_fkey";
+            columns: ["tutee_id"];
+            isOneToOne: false;
+            referencedRelation: "tutees";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "availability_slots_subject_id_fkey";
+            columns: ["subject_id"];
+            isOneToOne: false;
+            referencedRelation: "subjects";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       claims: {
         Row: {
@@ -148,6 +194,22 @@ export interface Database {
           cancelled_at: string | null;
           cancel_reason: string | null;
         }>;
+        Relationships: [
+          {
+            foreignKeyName: "claims_slot_id_fkey";
+            columns: ["slot_id"];
+            isOneToOne: false;
+            referencedRelation: "availability_slots";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "claims_tutor_id_fkey";
+            columns: ["tutor_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
       };
     };
     Views: {
@@ -162,6 +224,7 @@ export interface Database {
           tutor_id: string | null;
           status: SlotStatusValue;
         };
+        Relationships: [];
       };
       tutor_visible_contacts: {
         Row: {
@@ -170,6 +233,7 @@ export interface Database {
           parent_email: string;
           tutor_id: string;
         };
+        Relationships: [];
       };
     };
     Functions: Record<string, never>;
@@ -178,5 +242,6 @@ export interface Database {
       claim_status: ClaimStatus;
       weekday: Weekday;
     };
+    CompositeTypes: Record<string, never>;
   };
 }

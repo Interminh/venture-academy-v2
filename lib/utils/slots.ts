@@ -1,4 +1,10 @@
-import type { Weekday } from "@/lib/types/database";
+import type { SlotStatusValue, Weekday } from "@/lib/types/database";
+
+// Maps the DB's slot_status.status ("open"|"pending"|"approved") to the
+// UI's display vocabulary, where an approved claim is shown as "Booked".
+export function toDisplayStatus(status: SlotStatusValue): "open" | "pending" | "booked" {
+  return status === "approved" ? "booked" : status;
+}
 
 export const WEEKDAYS: Weekday[] = ["mon", "tue", "wed", "thu", "fri"];
 
