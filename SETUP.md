@@ -55,15 +55,28 @@ supabase/seed.sql
 You can add/rename/retire subjects later from the admin dashboard itself —
 this seed is just so the dropdowns aren't empty on day one.
 
-## 4. Turn off email confirmation (recommended for a first test pass)
+## 4. Email confirmation
 
 By default Supabase requires clicking a confirmation link before a new
-account can log in. For your own first test run this just adds friction —
-go to **Authentication → Providers → Email** and toggle **Confirm email**
-off. You can turn it back on later once you're ready for real families to
-sign up (in which case also set up a custom SMTP sender under
-**Authentication → Emails** so confirmation/reset emails don't come from a
-generic Supabase address).
+account can log in — that adds friction and depends on Supabase's very low
+free-tier email send limit, which is easy to hit while testing.
+
+`supabase/migrations/0002_autoconfirm_email.sql` (run this in the SQL
+Editor too) sidesteps this entirely: it auto-confirms every account at
+signup, so login never depends on an email link at all. This is the
+recommended path — you don't need to go hunting for the "Confirm email"
+toggle in the dashboard (it moves around between Supabase's own redesigns).
+
+If you'd rather have real email verification later (e.g. once this is
+public-facing and you want to guarantee an email address is real), drop
+that trigger and instead enable **Confirm email** under **Authentication →
+Providers → Email**, plus set up a custom SMTP sender under
+**Authentication → Emails** so the confirmation/reset emails come from your
+own address instead of a generic Supabase one.
+
+If you'd already created a test account before running this migration, it
+won't retroactively confirm it — also run `supabase/confirm_existing_users_dev.sql`
+once to confirm any existing accounts.
 
 ## 5. Install and run
 
