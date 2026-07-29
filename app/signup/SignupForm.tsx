@@ -11,6 +11,17 @@ const initialState: ActionState = {};
 export function SignupForm() {
   const [state, formAction, pending] = useActionState(signUp, initialState);
 
+  if (state.success) {
+    return (
+      <div className="flex flex-col gap-4 text-center">
+        <p className="text-sm text-ink">{state.success}</p>
+        <Link href="/login" className="font-medium text-primary hover:underline">
+          Go to login
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <form action={formAction} className="flex flex-col gap-4">
       <div>

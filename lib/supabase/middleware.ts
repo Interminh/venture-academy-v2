@@ -41,11 +41,25 @@ export async function updateSession(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const isDashboardRoute = path.startsWith("/dashboard");
 
-  if (isDashboardRoute && !user) {
+  // Redirects need to carry forward any session cookies that getUser() just
+  // refreshed on supabaseResponse — building a bare NextResponse.redirect()
+  // instead would silently drop a just-refreshed token on this request.
+  function redirect(pathname: string, extraParams?: Record<string, string>) {
     const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    url.searchParams.set("next", path);
-    return NextResponse.redirect(url);
+    url.pathname = pathname;
+    url.search = "";
+    for (const [key, value] of Object.entries(extraParams ?? {})) {
+      url.searchParams.set(key, value);
+    }
+    const response = NextResponse.redirect(url);
+    for (const cookie of supabaseResponse.cookies.getAll()) {
+      response.cookies.set(cookie);
+    }
+    return response;
+  }
+
+  if (isDashboardRoute && !user) {
+    return redirect("/login", { next: path });
   }
 
   if (isDashboardRoute && user) {
@@ -59,9 +73,7 @@ export async function updateSession(request: NextRequest) {
     const roleSection = path.split("/")[2]; // "admin" | "tutor" | "parent" | undefined
 
     if (role && roleSection && roleSection !== role && ["admin", "tutor", "parent"].includes(roleSection)) {
-      const url = request.nextUrl.clone();
-      url.pathname = role in ROLE_HOME ? ROLE_HOME[role] : "/login";
-      return NextResponse.redirect(url);
+      return redirect(role in ROLE_HOME ? ROLE_HOME[role] : "/login");
     }
   }
 

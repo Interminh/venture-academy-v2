@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 
 export interface ActionState {
   error?: string;
+  success?: string;
 }
 
 // Public self-signup only ever creates a `parent` account — role is never
@@ -26,7 +27,7 @@ export async function signUp(
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
@@ -36,6 +37,16 @@ export async function signUp(
 
   if (error) {
     return { error: error.message };
+  }
+
+  // If the project requires email confirmation, signUp succeeds but returns
+  // no session — redirecting to /dashboard here would just bounce straight
+  // back to /login with no explanation. Tell the user what's actually next
+  // instead of silently failing.
+  if (!data.session) {
+    return {
+      success: "Almost done — check your email for a confirmation link before logging in.",
+    };
   }
 
   redirect("/dashboard");
@@ -56,6 +67,12 @@ export async function signIn(
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
+    // Surface the "needs confirmation" case distinctly — it's a different,
+    // actionable problem from a wrong password, and looks identical to the
+    // user if we collapse both into one generic message.
+    if (error.code === "email_not_confirmed") {
+      return { error: "Please confirm your email first — check your inbox for the confirmation link." };
+    }
     return { error: "Incorrect email or password." };
   }
 
