@@ -8,9 +8,14 @@ export interface ActionState {
   success?: string;
 }
 
-// Public self-signup only ever creates a `parent` account — role is never
-// read from the submitted form, so a client can't request 'admin'/'tutor'.
-// Tutor/admin accounts are provisioned separately via the admin invite flow.
+// Both parents and tutors sign up through this same form. Role is never
+// read directly off the submitted form — a client can't just request
+// role=tutor. Instead, an optional tutor code is checked server-side via
+// `is_valid_tutor_code`, a security-definer function that can confirm a
+// code is valid without this (unauthenticated) request ever being able to
+// read the codes table itself. No code -> parent. Valid code -> tutor.
+// Invalid code -> rejected, so a typo doesn't silently create a parent
+// account when the person meant to sign up as a tutor.
 export async function signUp(
   _prevState: ActionState,
   formData: FormData
@@ -18,6 +23,7 @@ export async function signUp(
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const displayName = String(formData.get("displayName") ?? "").trim();
+  const tutorCode = String(formData.get("tutorCode") ?? "").trim();
 
   if (!email || !password || !displayName) {
     return { error: "Please fill in every field." };
@@ -27,11 +33,22 @@ export async function signUp(
   }
 
   const supabase = await createClient();
+
+  let role: "parent" | "tutor" = "parent";
+  if (tutorCode) {
+    const { data: isValid, error: codeError } = await supabase.rpc("is_valid_tutor_code", {
+      input_code: tutorCode,
+    });
+    if (codeError) return { error: codeError.message };
+    if (!isValid) return { error: "That tutor code isn't valid — check with a club director." };
+    role = "tutor";
+  }
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      data: { display_name: displayName, role: "parent" },
+      data: { display_name: displayName, role },
     },
   });
 

@@ -1,6 +1,7 @@
 "use server";
 
-import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
+import { revalidatePath } from "next/cache";
+import { createClient } from "@/lib/supabase/server";
 import type { UserRole } from "@/lib/types/database";
 
 export interface ActionState {
@@ -8,10 +9,10 @@ export interface ActionState {
   success?: string;
 }
 
-// Only route by which tutor/admin accounts get created — public /signup
-// can never reach this, and this action re-checks the caller is an admin
-// itself (never trust that the UI only shows this page to admins).
-export async function inviteUser(
+// Promotes/demotes an existing account. Admin-only, and an admin can't
+// change their own role here — prevents a solo admin from accidentally
+// locking themselves out by fat-fingering their own row.
+export async function updateUserRole(
   _prevState: ActionState,
   formData: FormData
 ): Promise<ActionState> {
@@ -21,30 +22,19 @@ export async function inviteUser(
   } = await supabase.auth.getUser();
   if (!user) return { error: "You must be logged in." };
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-
-  if (profile?.role !== "admin") {
-    return { error: "Only admins can invite tutor or admin accounts." };
-  }
-
-  const email = String(formData.get("email") ?? "").trim();
-  const displayName = String(formData.get("displayName") ?? "").trim();
+  const targetId = String(formData.get("userId") ?? "");
   const role = String(formData.get("role") ?? "") as UserRole;
 
-  if (!email || !displayName || !["tutor", "admin"].includes(role)) {
-    return { error: "Please fill in every field." };
+  if (!["admin", "tutor", "parent"].includes(role)) {
+    return { error: "Invalid role." };
+  }
+  if (targetId === user.id) {
+    return { error: "You can't change your own role here — ask another admin." };
   }
 
-  const serviceClient = createServiceRoleClient();
-  const { error } = await serviceClient.auth.admin.inviteUserByEmail(email, {
-    data: { display_name: displayName, role },
-  });
-
+  const { error } = await supabase.from("profiles").update({ role }).eq("id", targetId);
   if (error) return { error: error.message };
 
-  return { success: `Invite sent to ${email} as ${role}.` };
+  revalidatePath("/dashboard/admin/users");
+  return { success: "Role updated." };
 }

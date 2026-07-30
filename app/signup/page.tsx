@@ -11,11 +11,11 @@ export default function SignupPage() {
         </Link>
         <Card className="p-8">
           <h1 className="mb-1 font-heading text-xl font-bold text-ink">
-            Sign up for tutoring
+            Create an account
           </h1>
           <p className="mb-6 text-sm text-body">
-            For parents/guardians of a K-8 student. Tutor accounts are set
-            up by a club director — see the tutors page for how to apply.
+            For parents/guardians signing a student up for tutoring, and for
+            Interlake tutors — tutors need a code from a club director.
           </p>
           <SignupForm />
         </Card>

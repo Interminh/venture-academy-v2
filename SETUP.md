@@ -97,11 +97,15 @@ hand once:
 2. In the Supabase dashboard, **Table Editor → profiles**, find that row and
    change its `role` column from `parent` to `admin`. Refresh the app — you
    now land in the admin dashboard.
-3. From `/dashboard/admin/users/invite`, invite yourself (or teammates) as
-   additional `tutor` or `admin` accounts. Each invite sends a real email
-   with a link to set a password — no shared password anywhere.
-4. Sign up a second, separate account normally at `/signup` to act as a test
-   parent, and use the admin invite screen to create a test tutor account.
+3. From `/dashboard/admin/users`, add a tutor sign-up code (any string you
+   choose, e.g. `VAT-TUTOR-2026`). This is what you hand out to real tutors.
+4. Sign up a second, separate test account at `/signup`, check "I'm signing
+   up as a tutor," and enter that code — it comes in as `tutor` immediately,
+   no email/invite step involved. Sign up a third account without checking
+   the box to act as a test parent.
+5. The same `/dashboard/admin/users` page also lets you promote/demote any
+   existing account's role directly, if you ever need to fix a mis-signup
+   or make someone else an admin.
 
 ## 7. Walk the full lifecycle once
 

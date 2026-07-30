@@ -211,6 +211,25 @@ export interface Database {
           }
         ];
       };
+      tutor_signup_codes: {
+        Row: {
+          id: string;
+          code: string;
+          is_active: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          code: string;
+          is_active?: boolean;
+          created_at?: string;
+        };
+        Update: Partial<{
+          code: string;
+          is_active: boolean;
+        }>;
+        Relationships: [];
+      };
     };
     Views: {
       slot_status: {
@@ -236,7 +255,12 @@ export interface Database {
         Relationships: [];
       };
     };
-    Functions: Record<string, never>;
+    Functions: {
+      is_valid_tutor_code: {
+        Args: { input_code: string };
+        Returns: boolean;
+      };
+    };
     Enums: {
       user_role: UserRole;
       claim_status: ClaimStatus;

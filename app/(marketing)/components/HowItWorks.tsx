@@ -5,7 +5,7 @@ const PARENT_STEPS = [
 ];
 
 const TUTOR_STEPS = [
-  { title: "Get an account from a director", body: "Tutor accounts are set up individually — no shared password." },
+  { title: "Sign up with a tutor code", body: "Get the code from a club director, then create your own account — no shared password." },
   { title: "Browse open slots", body: "Filter by grade and subject, then request the times you can commit to." },
   { title: "Get approved and tutor", body: "A director reviews your request; once approved, you're matched with the family." },
 ];

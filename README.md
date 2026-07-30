@@ -27,10 +27,12 @@ testing the whole parent → tutor → admin flow locally.
 ## Roles
 
 - **Parent** — self-signup, manages their own student(s) only.
-- **Tutor** — individual login (no shared password), browses/claims slots,
-  cancels their own bookings.
+- **Tutor** — self-signup with a code from a club director (no shared
+  password, no invite email), browses/claims slots, cancels their own
+  bookings.
 - **Admin** — club directors; approves/rejects claims, force-cancels any
-  booking, manages the subjects list, invites tutor/admin accounts.
+  booking, manages the subjects list and tutor sign-up codes, and can
+  promote/demote any account's role.
 
 ## Stack
 

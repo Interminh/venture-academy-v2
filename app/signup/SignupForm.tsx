@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
 import { signUp, type ActionState } from "@/lib/actions/auth";
 import { Button } from "@/components/ui/Button";
@@ -10,6 +10,7 @@ const initialState: ActionState = {};
 
 export function SignupForm() {
   const [state, formAction, pending] = useActionState(signUp, initialState);
+  const [isTutor, setIsTutor] = useState(false);
 
   if (state.success) {
     return (
@@ -43,6 +44,31 @@ export function SignupForm() {
           required
         />
       </div>
+
+      <label className="flex cursor-pointer items-center gap-2 text-sm text-body">
+        <input
+          type="checkbox"
+          checked={isTutor}
+          onChange={(e) => setIsTutor(e.target.checked)}
+          className="h-4 w-4 cursor-pointer accent-primary"
+        />
+        I&apos;m signing up as a tutor
+      </label>
+
+      {isTutor && (
+        <div>
+          <Label htmlFor="tutorCode">Tutor code</Label>
+          <Input
+            id="tutorCode"
+            name="tutorCode"
+            type="text"
+            placeholder="Get this from a club director"
+            autoComplete="off"
+            required
+          />
+        </div>
+      )}
+
       <FieldError message={state.error} />
       <Button type="submit" disabled={pending} className="w-full">
         {pending ? "Creating account…" : "Create account"}
