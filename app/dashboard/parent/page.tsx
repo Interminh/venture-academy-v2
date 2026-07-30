@@ -4,7 +4,6 @@ import { Card } from "@/components/ui/Card";
 import { ButtonLink } from "@/components/ui/Button";
 import { SlotAgenda, type AgendaItem } from "@/components/slots/SlotAgenda";
 import { gradeLabel, toDisplayStatus } from "@/lib/utils/slots";
-import type { SlotStatusValue } from "@/lib/types/database";
 
 export default async function ParentDashboardPage() {
   const supabase = await createClient();
@@ -32,19 +31,15 @@ export default async function ParentDashboardPage() {
 
   const tuteeIds = tutees.map((t) => t.id);
 
-  const { data: slots } = await supabase
-    .from("availability_slots")
-    .select("id, tutee_id, day, start_time, subjects(name)")
-    .in("tutee_id", tuteeIds);
+  const [{ data: statuses }, { data: subjects }] = await Promise.all([
+    supabase
+      .from("slot_status")
+      .select("slot_id, tutee_id, day, start_time, claimed_subject_id, status")
+      .in("tutee_id", tuteeIds),
+    supabase.from("subjects").select("id, name"),
+  ]);
 
-  const { data: statuses } = await supabase
-    .from("slot_status")
-    .select("slot_id, status")
-    .in("tutee_id", tuteeIds);
-
-  const statusBySlot = new Map(
-    (statuses ?? []).map((s) => [s.slot_id, s.status as SlotStatusValue])
-  );
+  const subjectNameById = new Map((subjects ?? []).map((s) => [s.id, s.name]));
 
   return (
     <div className="flex flex-col gap-10">
@@ -56,14 +51,16 @@ export default async function ParentDashboardPage() {
       </div>
 
       {tutees.map((tutee) => {
-        const items: AgendaItem[] = (slots ?? [])
+        const items: AgendaItem[] = (statuses ?? [])
           .filter((s) => s.tutee_id === tutee.id)
           .map((s) => ({
-            id: s.id,
+            id: s.slot_id,
             day: s.day,
             startTime: s.start_time,
-            subjectName: (s.subjects as unknown as { name: string } | null)?.name ?? "Subject",
-            status: toDisplayStatus(statusBySlot.get(s.id) ?? "open"),
+            subjectName: s.claimed_subject_id
+              ? subjectNameById.get(s.claimed_subject_id)
+              : undefined,
+            status: toDisplayStatus(s.status),
           }));
 
         return (

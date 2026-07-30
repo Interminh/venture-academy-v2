@@ -29,12 +29,13 @@ SUPABASE_SERVICE_ROLE_KEY=eyJ...
 
 `.env.local` is already gitignored — it will never get committed.
 
-## 3. Run the schema migration
+## 3. Run the schema migrations
 
 Easiest path (no CLI install needed): open your project's **SQL Editor** in
-the Supabase dashboard, paste the entire contents of
-`supabase/migrations/0001_init.sql`, and run it. That one file creates every
-enum, table, RLS policy, and view the app needs.
+the Supabase dashboard and run each file in `supabase/migrations/` **in
+order** — `0001_init.sql`, then `0002_autoconfirm_email.sql`,
+`0003_grants.sql`, `0004_tutor_signup_codes.sql`, and
+`0005_schedule_per_student.sql`. They build on each other, so order matters.
 
 If you'd rather use the CLI (keeps a proper migration history for future
 changes):
@@ -61,11 +62,11 @@ By default Supabase requires clicking a confirmation link before a new
 account can log in — that adds friction and depends on Supabase's very low
 free-tier email send limit, which is easy to hit while testing.
 
-`supabase/migrations/0002_autoconfirm_email.sql` (run this in the SQL
-Editor too) sidesteps this entirely: it auto-confirms every account at
-signup, so login never depends on an email link at all. This is the
-recommended path — you don't need to go hunting for the "Confirm email"
-toggle in the dashboard (it moves around between Supabase's own redesigns).
+`supabase/migrations/0002_autoconfirm_email.sql` (already run as part of
+step 3) sidesteps this entirely: it auto-confirms every account at signup,
+so login never depends on an email link at all. This is the recommended
+path — you don't need to go hunting for the "Confirm email" toggle in the
+dashboard (it moves around between Supabase's own redesigns).
 
 If you'd rather have real email verification later (e.g. once this is
 public-facing and you want to guarantee an email address is real), drop
@@ -113,9 +114,11 @@ This exercises everything, including the two gaps the old system had
 (cancellation and subject management):
 
 1. **As the parent account** → `/dashboard/parent/intake` → add a student
-   with a couple of subjects and a few availability slots.
-2. **As the tutor account** → `/dashboard/tutor` → claim one of those open
-   slots. It should immediately show "Pending."
+   with a couple of needed subjects and one shared weekly schedule (not one
+   schedule per subject).
+2. **As the tutor account** → `/dashboard/tutor` → click that student's
+   card to open their schedule → claim an open time and pick which subject
+   you're helping with. It should immediately show "Pending."
 3. **As the admin account** → `/dashboard/admin` → approve the claim. It
    should flip to "Booked" everywhere, and the tutor should now see the
    parent's email on `/dashboard/tutor/claims`.

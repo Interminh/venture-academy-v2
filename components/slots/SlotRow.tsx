@@ -10,19 +10,17 @@ export function SlotRow({
   actions,
 }: {
   startTime: string;
-  subjectName: string;
+  subjectName?: string;
   tuteeLabel?: string;
   status: SlotStatus;
   actions?: React.ReactNode;
 }) {
+  const meta = [subjectName, tuteeLabel].filter(Boolean).join(" · ");
   return (
     <Card className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
         <p className="font-medium text-ink">{formatTimeRange(startTime)}</p>
-        <p className="text-sm text-body">
-          {subjectName}
-          {tuteeLabel && <> · {tuteeLabel}</>}
-        </p>
+        {meta && <p className="text-sm text-body">{meta}</p>}
       </div>
       <div className="flex items-center gap-4">
         <StatusTrack status={status} />

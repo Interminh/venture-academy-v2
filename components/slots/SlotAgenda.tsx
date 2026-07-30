@@ -7,7 +7,7 @@ export interface AgendaItem {
   id: string;
   day: Weekday;
   startTime: string;
-  subjectName: string;
+  subjectName?: string;
   tuteeLabel?: string;
   status: SlotStatus;
   actions?: React.ReactNode;

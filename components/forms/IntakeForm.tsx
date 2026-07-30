@@ -18,7 +18,7 @@ interface ExistingTutee {
   first_name: string;
   grade: number;
   subjectIds: string[];
-  slotsBySubject: Record<string, SlotKey[]>;
+  slots: SlotKey[];
 }
 
 export function IntakeForm({
@@ -34,11 +34,7 @@ export function IntakeForm({
   const [selectedSubjectIds, setSelectedSubjectIds] = useState<Set<string>>(
     new Set(existing?.subjectIds ?? [])
   );
-  const [slotsBySubject, setSlotsBySubject] = useState<Map<string, Set<SlotKey>>>(
-    new Map(
-      Object.entries(existing?.slotsBySubject ?? {}).map(([id, keys]) => [id, new Set(keys)])
-    )
-  );
+  const [slots, setSlots] = useState<Set<SlotKey>>(new Set(existing?.slots ?? []));
 
   function toggleSubject(id: string) {
     setSelectedSubjectIds((prev) => {
@@ -49,13 +45,11 @@ export function IntakeForm({
     });
   }
 
-  function toggleSlot(subjectId: string, key: SlotKey) {
-    setSlotsBySubject((prev) => {
-      const next = new Map(prev);
-      const set = new Set(next.get(subjectId) ?? []);
-      if (set.has(key)) set.delete(key);
-      else set.add(key);
-      next.set(subjectId, set);
+  function toggleSlot(key: SlotKey) {
+    setSlots((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
   }
@@ -117,26 +111,13 @@ export function IntakeForm({
             );
           })}
         </div>
+        <p className="mt-2 text-xs text-gray-400">
+          One shared schedule below — a tutor picks which of these subjects
+          they&apos;re helping with when they claim a time.
+        </p>
       </div>
 
-      {[...selectedSubjectIds].length > 0 && (
-        <div className="flex flex-col gap-6">
-          <Label>Weekly availability</Label>
-          {[...selectedSubjectIds].map((subjectId) => {
-            const subject = subjects.find((s) => s.id === subjectId);
-            if (!subject) return null;
-            return (
-              <AvailabilityPicker
-                key={subjectId}
-                subjectId={subjectId}
-                subjectName={subject.name}
-                selected={slotsBySubject.get(subjectId) ?? new Set()}
-                onToggle={(key) => toggleSlot(subjectId, key)}
-              />
-            );
-          })}
-        </div>
-      )}
+      <AvailabilityPicker selected={slots} onToggle={toggleSlot} />
 
       <FieldError message={state.error} />
       <Button type="submit" disabled={pending} className="self-start">

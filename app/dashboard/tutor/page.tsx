@@ -1,9 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
-import { SlotAgenda, type AgendaItem } from "@/components/slots/SlotAgenda";
-import { ClaimButton } from "@/components/slots/ClaimButton";
 import { RealtimeRefresh } from "@/components/slots/RealtimeRefresh";
+import { TutorRosterGrid, type StudentSummary } from "@/components/tutor/TutorRosterGrid";
 import { Select } from "@/components/ui/Input";
-import { gradeLabel, toDisplayStatus } from "@/lib/utils/slots";
+import { toDisplayStatus } from "@/lib/utils/slots";
 import type { SlotStatusValue } from "@/lib/types/database";
 
 export default async function TutorBrowsePage({
@@ -14,63 +13,64 @@ export default async function TutorBrowsePage({
   const { subject: subjectFilter, grade: gradeFilter } = await searchParams;
   const supabase = await createClient();
 
-  const { data: subjects } = await supabase
-    .from("subjects")
-    .select("id, name")
-    .eq("is_active", true)
-    .order("name");
+  const [{ data: allSubjects }, { data: tutees }] = await Promise.all([
+    supabase.from("subjects").select("id, name").eq("is_active", true).order("name"),
+    supabase
+      .from("tutees")
+      .select("id, first_name, grade, tutee_subjects(subjects(id, name))")
+      .order("first_name"),
+  ]);
 
-  let slotsQuery = supabase
-    .from("availability_slots")
-    .select("id, day, start_time, subject_id, subjects(name), tutees(first_name, grade)");
+  let filteredTutees = tutees ?? [];
+  if (gradeFilter) {
+    filteredTutees = filteredTutees.filter((t) => t.grade === Number(gradeFilter));
+  }
+  if (subjectFilter) {
+    filteredTutees = filteredTutees.filter((t) =>
+      (t.tutee_subjects as unknown as { subjects: { id: string } | null }[]).some(
+        (ts) => ts.subjects?.id === subjectFilter
+      )
+    );
+  }
 
-  if (subjectFilter) slotsQuery = slotsQuery.eq("subject_id", subjectFilter);
+  const tuteeIds = filteredTutees.map((t) => t.id);
+  const { data: statuses } = tuteeIds.length
+    ? await supabase
+        .from("slot_status")
+        .select("slot_id, tutee_id, day, start_time, status")
+        .in("tutee_id", tuteeIds)
+    : { data: [] as { slot_id: string; tutee_id: string; day: string; start_time: string; status: SlotStatusValue }[] };
 
-  const { data: slots } = await slotsQuery;
-
-  const filteredSlots = (slots ?? []).filter((s) => {
-    if (!gradeFilter) return true;
-    const tutee = s.tutees as unknown as { grade: number } | null;
-    return tutee?.grade === Number(gradeFilter);
-  });
-
-  const slotIds = filteredSlots.map((s) => s.id);
-  const { data: statuses } = slotIds.length
-    ? await supabase.from("slot_status").select("slot_id, status").in("slot_id", slotIds)
-    : { data: [] as { slot_id: string; status: SlotStatusValue }[] };
-
-  const statusBySlot = new Map(
-    (statuses ?? []).map((s) => [s.slot_id, s.status as SlotStatusValue])
-  );
-
-  const items: AgendaItem[] = filteredSlots.map((s) => {
-    const subjectName = (s.subjects as unknown as { name: string } | null)?.name ?? "Subject";
-    const tutee = s.tutees as unknown as { first_name: string; grade: number } | null;
-    const rawStatus = statusBySlot.get(s.id) ?? "open";
-    const status = toDisplayStatus(rawStatus);
-
-    return {
-      id: s.id,
-      day: s.day,
-      startTime: s.start_time,
-      subjectName,
-      tuteeLabel: tutee ? `${tutee.first_name} · ${gradeLabel(tutee.grade)}` : undefined,
-      status,
-      actions: status === "open" ? <ClaimButton slotId={s.id} /> : undefined,
-    };
-  });
+  const students: StudentSummary[] = filteredTutees.map((t) => ({
+    id: t.id,
+    firstName: t.first_name,
+    grade: t.grade,
+    subjects: (t.tutee_subjects as unknown as { subjects: { id: string; name: string } | null }[])
+      .map((ts) => ts.subjects)
+      .filter((s): s is { id: string; name: string } => s !== null),
+    slots: (statuses ?? [])
+      .filter((s) => s.tutee_id === t.id)
+      .map((s) => ({
+        slotId: s.slot_id,
+        day: s.day as StudentSummary["slots"][number]["day"],
+        startTime: s.start_time,
+        status: toDisplayStatus(s.status),
+      })),
+  }));
 
   return (
     <div>
       <RealtimeRefresh table="claims" />
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="font-heading text-2xl font-bold text-ink">Browse open slots</h1>
-      </div>
+      <h1 className="mb-1 font-heading text-2xl font-bold text-ink">Browse students</h1>
+      <p className="mb-6 text-body">
+        Pick a student to see their weekly schedule, then claim an open time
+        and choose which subject you&apos;ll help with.
+      </p>
 
       <form className="mb-6 flex flex-wrap gap-3" method="get">
         <Select name="subject" defaultValue={subjectFilter ?? ""} className="w-auto">
           <option value="">All subjects</option>
-          {(subjects ?? []).map((s) => (
+          {(allSubjects ?? []).map((s) => (
             <option key={s.id} value={s.id}>
               {s.name}
             </option>
@@ -93,7 +93,7 @@ export default async function TutorBrowsePage({
         </button>
       </form>
 
-      <SlotAgenda items={items} emptyMessage="No slots match these filters yet." />
+      <TutorRosterGrid students={students} />
     </div>
   );
 }

@@ -17,16 +17,14 @@ export default async function EditTuteePage({
       supabase.from("subjects").select("id, name").eq("is_active", true).order("name"),
       supabase.from("tutees").select("id, first_name, grade").eq("id", tuteeId).single(),
       supabase.from("tutee_subjects").select("subject_id").eq("tutee_id", tuteeId),
-      supabase.from("availability_slots").select("subject_id, day, start_time").eq("tutee_id", tuteeId),
+      supabase.from("availability_slots").select("day, start_time").eq("tutee_id", tuteeId),
     ]);
 
   if (!tutee) notFound();
 
-  const slotsBySubject: Record<string, SlotKey[]> = {};
-  for (const slot of slots ?? []) {
-    const key: SlotKey = `${slot.day}|${slot.start_time}`;
-    slotsBySubject[slot.subject_id] = [...(slotsBySubject[slot.subject_id] ?? []), key];
-  }
+  const slotKeys: SlotKey[] = (slots ?? []).map(
+    (slot) => `${slot.day}|${slot.start_time}` as SlotKey
+  );
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -43,7 +41,7 @@ export default async function EditTuteePage({
             first_name: tutee.first_name,
             grade: tutee.grade,
             subjectIds: (tuteeSubjects ?? []).map((s) => s.subject_id),
-            slotsBySubject,
+            slots: slotKeys,
           }}
         />
       </Card>

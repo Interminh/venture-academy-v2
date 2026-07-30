@@ -9,12 +9,12 @@ export interface ActionState {
   error?: string;
 }
 
-// Slot checkboxes in the form are named "slot" with value "day|subjectId|start_time",
-// since one tutee can need different subjects at different times.
-function parseSlots(formData: FormData): { day: Weekday; subjectId: string; startTime: string }[] {
+// Slot checkboxes in the form are named "slot" with value "day|start_time" —
+// one shared schedule per student, independent of subject.
+function parseSlots(formData: FormData): { day: Weekday; startTime: string }[] {
   return formData.getAll("slot").map((raw) => {
-    const [day, subjectId, startTime] = String(raw).split("|");
-    return { day: day as Weekday, subjectId, startTime };
+    const [day, startTime] = String(raw).split("|");
+    return { day: day as Weekday, startTime };
   });
 }
 
@@ -62,7 +62,6 @@ export async function createTutee(
   const { error: slotsError } = await supabase.from("availability_slots").insert(
     slots.map((s) => ({
       tutee_id: tutee.id,
-      subject_id: s.subjectId,
       day: s.day,
       start_time: s.startTime,
     }))
@@ -125,7 +124,7 @@ export async function updateTutee(
 
   const { data: existingSlots } = await supabase
     .from("availability_slots")
-    .select("id, subject_id, day, start_time")
+    .select("id, day, start_time")
     .eq("tutee_id", tuteeId);
 
   const { data: liveClaims } = await supabase
@@ -134,17 +133,14 @@ export async function updateTutee(
     .in("status", ["pending", "approved"]);
   const liveSlotIds = new Set((liveClaims ?? []).map((c) => c.slot_id));
 
-  const slotKey = (s: { subject_id: string; day: string; start_time: string }) =>
-    `${s.subject_id}|${s.day}|${s.start_time}`;
-  const submittedKeys = new Set(
-    submittedSlots.map((s) => `${s.subjectId}|${s.day}|${s.startTime}`)
-  );
+  const slotKey = (s: { day: string; start_time: string }) => `${s.day}|${s.start_time}`;
+  const submittedKeys = new Set(submittedSlots.map((s) => `${s.day}|${s.startTime}`));
 
   const toRemoveSlots = (existingSlots ?? []).filter(
     (s) => !submittedKeys.has(slotKey(s)) && !liveSlotIds.has(s.id)
   );
   const toAddSlots = submittedSlots.filter(
-    (s) => !(existingSlots ?? []).some((e) => slotKey(e) === `${s.subjectId}|${s.day}|${s.startTime}`)
+    (s) => !(existingSlots ?? []).some((e) => slotKey(e) === `${s.day}|${s.startTime}`)
   );
 
   if (toRemoveSlots.length > 0) {
@@ -157,7 +153,6 @@ export async function updateTutee(
     await supabase.from("availability_slots").insert(
       toAddSlots.map((s) => ({
         tutee_id: tuteeId,
-        subject_id: s.subjectId,
         day: s.day,
         start_time: s.startTime,
       }))

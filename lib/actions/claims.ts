@@ -10,10 +10,12 @@ export interface ActionState {
 
 const UNIQUE_VIOLATION = "23505";
 
-// A tutor claims an open slot. The partial unique index on
-// claims(slot_id) WHERE status IN ('pending','approved') is what actually
-// makes this race-safe — if another tutor claimed it a moment ago, this
-// insert fails and we surface a friendly message instead of a stack trace.
+// A tutor claims an open slot for one of the student's needed subjects
+// (a slot itself isn't tied to any subject — that's chosen here). The
+// partial unique index on claims(slot_id) WHERE status IN
+// ('pending','approved') is what actually makes this race-safe — if
+// another tutor claimed it a moment ago, this insert fails and we surface
+// a friendly message instead of a stack trace.
 export async function submitClaim(
   _prevState: ActionState,
   formData: FormData
@@ -25,11 +27,27 @@ export async function submitClaim(
   if (!user) return { error: "You must be logged in." };
 
   const slotId = String(formData.get("slotId") ?? "");
-  if (!slotId) return { error: "Missing slot." };
+  const subjectId = String(formData.get("subjectId") ?? "");
+  if (!slotId || !subjectId) return { error: "Please choose a subject." };
+
+  const { data: slot } = await supabase
+    .from("availability_slots")
+    .select("tutee_id")
+    .eq("id", slotId)
+    .single();
+  if (!slot) return { error: "That slot no longer exists." };
+
+  const { data: needsSubject } = await supabase
+    .from("tutee_subjects")
+    .select("id")
+    .eq("tutee_id", slot.tutee_id)
+    .eq("subject_id", subjectId)
+    .maybeSingle();
+  if (!needsSubject) return { error: "This student doesn't need that subject." };
 
   const { error } = await supabase
     .from("claims")
-    .insert({ slot_id: slotId, tutor_id: user.id, status: "pending" });
+    .insert({ slot_id: slotId, tutor_id: user.id, subject_id: subjectId, status: "pending" });
 
   if (error) {
     if (error.code === UNIQUE_VIOLATION) {

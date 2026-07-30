@@ -6,23 +6,20 @@ import type { Weekday } from "@/lib/types/database";
 
 export type SlotKey = `${Weekday}|${string}`;
 
-// One subject's weekly availability grid: Mon-Fri x half-hour start times.
-// Each checked cell becomes a `slot` form field valued "day|subjectId|time"
-// so the parent can pick different times per subject.
+// A student's single weekly availability grid: Mon-Fri x half-hour start
+// times. Each checked cell becomes a `slot` form field valued "day|time" —
+// availability isn't tied to a subject; a tutor picks the subject when
+// they claim a specific time.
 export function AvailabilityPicker({
-  subjectId,
-  subjectName,
   selected,
   onToggle,
 }: {
-  subjectId: string;
-  subjectName: string;
   selected: Set<SlotKey>;
   onToggle: (key: SlotKey) => void;
 }) {
   return (
     <div>
-      <p className="mb-2 text-sm font-medium text-ink">{subjectName} — available times</p>
+      <p className="mb-2 text-sm font-medium text-ink">Weekly availability</p>
       <div className="overflow-x-auto rounded-lg border border-border">
         <table className="w-full border-collapse text-xs">
           <thead>
@@ -50,7 +47,7 @@ export function AvailabilityPicker({
                         type="button"
                         onClick={() => onToggle(key)}
                         aria-pressed={isChecked}
-                        aria-label={`${subjectName}, ${WEEKDAY_LABELS[day]} ${formatTimeRange(time)}`}
+                        aria-label={`${WEEKDAY_LABELS[day]} ${formatTimeRange(time)}`}
                         className={cn(
                           "h-7 w-7 cursor-pointer rounded-md border transition-colors duration-150",
                           isChecked
@@ -58,9 +55,7 @@ export function AvailabilityPicker({
                             : "border-border bg-white hover:border-primary/50"
                         )}
                       >
-                        {isChecked && (
-                          <input type="hidden" name="slot" value={`${day}|${subjectId}|${time}`} />
-                        )}
+                        {isChecked && <input type="hidden" name="slot" value={key} />}
                       </button>
                     </td>
                   );

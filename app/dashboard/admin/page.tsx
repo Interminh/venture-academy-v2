@@ -9,7 +9,7 @@ export default async function AdminApprovalsPage() {
   const { data: claims } = await supabase
     .from("claims")
     .select(
-      "id, requested_at, profiles!claims_tutor_id_fkey(display_name), availability_slots(day, start_time, subjects(name), tutees(first_name, grade))"
+      "id, requested_at, profiles!claims_tutor_id_fkey(display_name), subjects(name), availability_slots(day, start_time, tutees(first_name, grade))"
     )
     .eq("status", "pending")
     .order("requested_at", { ascending: true });
@@ -31,10 +31,10 @@ export default async function AdminApprovalsPage() {
           const slot = c.availability_slots as unknown as {
             day: "mon" | "tue" | "wed" | "thu" | "fri";
             start_time: string;
-            subjects: { name: string } | null;
             tutees: { first_name: string; grade: number } | null;
           } | null;
           const tutor = c.profiles as unknown as { display_name: string } | null;
+          const subject = c.subjects as unknown as { name: string } | null;
 
           return (
             <ClaimApprovalRow
@@ -44,7 +44,7 @@ export default async function AdminApprovalsPage() {
               tuteeLabel={
                 slot?.tutees ? `${slot.tutees.first_name} (${gradeLabel(slot.tutees.grade)})` : "Student"
               }
-              subjectName={slot?.subjects?.name ?? "Subject"}
+              subjectName={subject?.name ?? "Subject"}
               day={slot?.day ?? "mon"}
               startTime={slot?.start_time ?? "16:00"}
               requestedAt={c.requested_at}

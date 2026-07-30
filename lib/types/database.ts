@@ -125,7 +125,6 @@ export interface Database {
         Row: {
           id: string;
           tutee_id: string;
-          subject_id: string;
           day: Weekday;
           start_time: string;
           created_at: string;
@@ -133,14 +132,12 @@ export interface Database {
         Insert: {
           id?: string;
           tutee_id: string;
-          subject_id: string;
           day: Weekday;
           start_time: string;
           created_at?: string;
         };
         Update: Partial<{
           tutee_id: string;
-          subject_id: string;
           day: Weekday;
           start_time: string;
         }>;
@@ -151,13 +148,6 @@ export interface Database {
             isOneToOne: false;
             referencedRelation: "tutees";
             referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "availability_slots_subject_id_fkey";
-            columns: ["subject_id"];
-            isOneToOne: false;
-            referencedRelation: "subjects";
-            referencedColumns: ["id"];
           }
         ];
       };
@@ -166,6 +156,7 @@ export interface Database {
           id: string;
           slot_id: string;
           tutor_id: string;
+          subject_id: string;
           status: ClaimStatus;
           requested_at: string;
           decided_by: string | null;
@@ -178,6 +169,7 @@ export interface Database {
           id?: string;
           slot_id: string;
           tutor_id: string;
+          subject_id: string;
           status?: ClaimStatus;
           requested_at?: string;
           decided_by?: string | null;
@@ -208,6 +200,13 @@ export interface Database {
             isOneToOne: false;
             referencedRelation: "profiles";
             referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "claims_subject_id_fkey";
+            columns: ["subject_id"];
+            isOneToOne: false;
+            referencedRelation: "subjects";
+            referencedColumns: ["id"];
           }
         ];
       };
@@ -236,11 +235,11 @@ export interface Database {
         Row: {
           slot_id: string;
           tutee_id: string;
-          subject_id: string;
           day: Weekday;
           start_time: string;
           claim_id: string | null;
           tutor_id: string | null;
+          claimed_subject_id: string | null;
           status: SlotStatusValue;
         };
         Relationships: [];

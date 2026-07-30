@@ -8,15 +8,17 @@ accounts, a proper database, and two gaps in the old system fixed
 (cancelling an approved booking, and managing the subject list without
 editing HTML).
 
-**Not connected to a database yet.** See [`SETUP.md`](./SETUP.md) for the
-full walkthrough — creating a Supabase project, running the migration, and
-testing the whole parent → tutor → admin flow locally.
+See [`SETUP.md`](./SETUP.md) for the full walkthrough — creating a Supabase
+project, running the migrations, and testing the whole parent → tutor →
+admin flow locally.
 
 ## How it works
 
-1. A parent signs up and adds their student — grade, subjects, weekly
-   availability.
-2. Tutors browse open slots across all students and submit a claim on one.
+1. A parent signs up and adds their student — grade, subjects needed, and
+   one shared weekly availability schedule (not one schedule per subject).
+2. Tutors browse students (filterable by grade/subject), open a student's
+   schedule, and claim an open time — picking which of that student's
+   subjects they're helping with as part of the claim.
 3. The slot immediately shows as "Pending" so no one else claims it.
 4. An admin (club director) approves or rejects the claim.
 5. **Approved** → the slot is "Booked," and the tutor can see the family's

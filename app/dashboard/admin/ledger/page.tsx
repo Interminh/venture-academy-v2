@@ -10,7 +10,7 @@ export default async function AdminLedgerPage() {
   const { data: claims } = await supabase
     .from("claims")
     .select(
-      "id, status, requested_at, profiles!claims_tutor_id_fkey(display_name), availability_slots(day, start_time, subjects(name), tutees(first_name, grade))"
+      "id, status, requested_at, profiles!claims_tutor_id_fkey(display_name), subjects(name), availability_slots(day, start_time, tutees(first_name, grade))"
     )
     .order("requested_at", { ascending: false });
 
@@ -37,17 +37,17 @@ export default async function AdminLedgerPage() {
               const slot = c.availability_slots as unknown as {
                 day: "mon" | "tue" | "wed" | "thu" | "fri";
                 start_time: string;
-                subjects: { name: string } | null;
                 tutees: { first_name: string; grade: number } | null;
               } | null;
               const tutor = c.profiles as unknown as { display_name: string } | null;
+              const subject = c.subjects as unknown as { name: string } | null;
 
               return (
                 <tr key={c.id} className="border-b border-border last:border-0">
                   <td className="p-3">
                     {slot?.tutees ? `${slot.tutees.first_name} (${gradeLabel(slot.tutees.grade)})` : "—"}
                   </td>
-                  <td className="p-3">{slot?.subjects?.name ?? "—"}</td>
+                  <td className="p-3">{subject?.name ?? "—"}</td>
                   <td className="p-3 whitespace-nowrap">
                     {slot ? `${WEEKDAY_LABELS[slot.day]} ${formatTimeRange(slot.start_time)}` : "—"}
                   </td>
