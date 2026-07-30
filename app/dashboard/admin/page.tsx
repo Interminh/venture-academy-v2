@@ -9,7 +9,7 @@ export default async function AdminApprovalsPage() {
   const { data: claims } = await supabase
     .from("claims")
     .select(
-      "id, requested_at, profiles(display_name), availability_slots(day, start_time, subjects(name), tutees(first_name, grade))"
+      "id, requested_at, profiles!claims_tutor_id_fkey(display_name), availability_slots(day, start_time, subjects(name), tutees(first_name, grade))"
     )
     .eq("status", "pending")
     .order("requested_at", { ascending: true });

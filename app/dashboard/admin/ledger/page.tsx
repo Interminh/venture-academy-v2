@@ -10,7 +10,7 @@ export default async function AdminLedgerPage() {
   const { data: claims } = await supabase
     .from("claims")
     .select(
-      "id, status, requested_at, profiles(display_name), availability_slots(day, start_time, subjects(name), tutees(first_name, grade))"
+      "id, status, requested_at, profiles!claims_tutor_id_fkey(display_name), availability_slots(day, start_time, subjects(name), tutees(first_name, grade))"
     )
     .order("requested_at", { ascending: false });
 
