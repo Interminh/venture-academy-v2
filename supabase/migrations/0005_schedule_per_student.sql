@@ -12,6 +12,10 @@ begin;
 
 truncate table claims, availability_slots;
 
+-- Must drop the view before dropping the column it reads — slot_status
+-- (from 0001) still references availability_slots.subject_id at this point.
+drop view slot_status;
+
 alter table availability_slots drop constraint availability_slots_tutee_id_subject_id_day_start_time_key;
 alter table availability_slots drop column subject_id;
 alter table availability_slots
@@ -26,8 +30,6 @@ grant select, insert, update, delete on availability_slots, claims
 -- slot_status no longer carries a subject (the slot itself has none now);
 -- it instead surfaces the subject of whatever live claim exists on it, if
 -- any, since that's the only place a subject is attached post-claim.
-drop view slot_status;
-
 create view slot_status
 with (security_invoker = on) as
 select
