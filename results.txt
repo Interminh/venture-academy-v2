@@ -1,0 +1,160 @@
+Results — everything from report.txt, one by one
+==================================================
+
+FIRST, IMPORTANT: six new migration files need to be run in your Supabase
+SQL editor before most of this works, same as you've done before. Run them
+in order:
+
+  0006_visible_inactive_subjects.sql
+  0007_email_registered_check.sql       (from the last session, if not already run)
+  0008_soft_delete_slots_and_parent_cancel.sql
+  0009_max_weekly_sessions.sql
+  0010_parent_visible_tutor_contacts.sql
+  0011_tutor_hours.sql
+
+Until you do, the app still works for everything that existed before today
+— it just won't crash on the new stuff, it'll quietly show empty/zero
+instead (e.g. "no students," "0 hours"). Nothing breaks, but nothing new
+shows real data until the SQL runs.
+
+
+Next: Have login stay within tab context (even with reload)
+-------------------------------------------------------------
+This turned out to be the same thing as the first parent-front item below
+— the marketing header always said "Log in / Sign up" even if you were
+already logged in, which looks exactly like getting logged out. Fixed
+there. Your actual session/cookie was never the problem — that was already
+solid (I stress-tested this pretty hard last time).
+
+
+PARENT FRONT
+------------
+
+1. "Home in top right instead of Log in + Sign up" — DONE.
+   The landing page header now checks if you're logged in and shows a
+   "Home" button (straight to your dashboard) instead of Log in/Sign up.
+   Applies to all three account types, since it's just "is anyone logged
+   in," not role-specific.
+
+2. Student first name → full name — DONE (from last session, still holds).
+   The field is labeled "Student's name" and takes whatever you type. I
+   left the database column named first_name internally since renaming it
+   is a bigger, riskier change than the actual request — nothing user
+   facing calls it "first name" anymore.
+
+3. "Edit availability gives a blank screen instead of existing values" —
+   FOUND THE BUG, FIXED. This was real and I'm glad you caught it: the
+   database stores times like "16:00:00" (with seconds), but the checkbox
+   grid was built using "16:00" (no seconds). They never matched, so every
+   existing slot looked unchecked when you opened Edit — and, worse, the
+   same mismatch meant *saving* an edit was quietly trying to re-insert
+   slots that already existed and erroring out. Both are fixed now
+   (lib/utils/slots.ts's new toHHMM() normalizes it everywhere).
+
+4. "What happens if you change availability while pending/booked — should
+   auto-cancel" — DONE, but this needed a real schema fix underneath it,
+   not just a tweak:
+     - Parents previously had zero ability to cancel a claim at all (only
+       tutors and admins could). Added that permission, scoped to your own
+       kids only (migration 0008).
+     - Removing a slot used to hard-delete it from the database, which
+       would have erased that claim's history along with it — breaking the
+       "claims are never deleted" rule the rest of the app already
+       promises (e.g. the Ledger page depends on this). So slots are now
+       "soft deleted" (marked inactive, not actually removed), which keeps
+       every claim's history intact permanently while still letting the
+       slot disappear from your schedule and the tutor's view.
+   Net effect: uncheck a slot that's pending or booked, and that claim
+   gets cancelled automatically — the tutor sees it drop off their claims
+   list, same as if they'd cancelled it themselves.
+
+5. "Sessions tab with tutor name/email once booked" — DONE. New "Sessions"
+   tab on the parent side, next to "My students." Lists every confirmed
+   booking across all your kids with the tutor's name and email attached.
+   This needed a new permission too (migration 0010) — previously there
+   was no way for a parent to even read a tutor's contact info from the
+   database, only the reverse (tutor seeing parent info).
+
+6. "Max sessions per week, fully booked once reached" — DONE. Optional
+   field on the student form ("no limit" if left blank). Once approved
+   bookings hit that number, the student shows a "Fully booked" badge —
+   on your dashboard and on the tutor's browse screen. Per your note, I
+   didn't make it a hard block on new claims, just a visible flag — a
+   director can still see and approve one over the cap if that's ever the
+   right call.
+
+7. "Additional Information free-text box" — DONE, and cheaper than
+   expected: the database already had a notes column from the original
+   schema, just never exposed anywhere. Added a textarea to the student
+   form and it now shows quietly under the student's name on your
+   dashboard (only if you actually wrote something).
+
+
+TUTOR FRONT
+-----------
+
+8. "My sessions" tab — DONE, and it turns out you already had this: "My
+   claims" already showed booked sessions + contact info exactly as
+   described. Renamed it to "My sessions" to match what you asked for and
+   to line up with the parent side's new tab.
+
+9. Hours logging (Date | Hours | Student | Description) — DONE. Added
+   right into the "My sessions" page, below the claims list: a small form
+   to log an entry, and a table of everything logged so far with a Remove
+   button per row. "Student" is a free-text field on purpose, per your
+   "(or other)" — so it's not locked to only students booked through the
+   system.
+
+
+ADMIN FRONT
+-----------
+
+10. Stats dashboard — DONE. New "Stats" tab: total hours tutored (pulled
+    from the tutor hours log above), student/tutor/family counts, booked
+    sessions, pending-approval count, and an hours-by-tutor breakdown
+    table.
+
+11. "Deactivating subjects does not work" — I couldn't fully reproduce
+    this as a flat-out failure: I tested the Deactivate button directly
+    against your live database and the toggle itself worked correctly
+    (badge flips to "Inactive," confirmed in the database, stays that way
+    on reload). But I found two real problems in the same area that would
+    absolutely look like "doesn't work" depending on what you saw:
+      - If that click ever failed for any reason, you'd have seen nothing
+        at all — no error, no change, just silence. The component was
+        throwing away the error message instead of showing it. Fixed (and
+        did the same fix on tutor codes, same bug, same file pattern).
+      - A deactivated subject a tutor already had loaded on their claim
+        dropdown wasn't being filtered out server-side. Fixed so a
+        retired subject can no longer be picked for a *new* claim, while
+        it's still safely preserved on students who already needed it
+        (from last session's fix).
+    If you still see something that doesn't match this after running the
+    migrations, tell me exactly what you clicked and what you expected —
+    I'd rather chase the real thing than guess again.
+
+
+NOT DONE / NEEDS A DECISION FROM YOU
+-------------------------------------
+
+- Notification emails (Future list) — nothing built. I don't know what
+  should trigger one (new claim submitted? approved? cancelled?) or who
+  should get it, and guessing wrong means either spamming people or
+  missing the one that matters. Tell me the trigger and I'll wire it in —
+  the SMTP setup from earlier already gives you a sending path.
+
+- "Add more subjects?" (Future list) — this already works today via
+  Admin → Subjects → Add subject, no code change needed. Flagging in case
+  you meant something more specific (bulk import? categories?).
+
+
+A NOTE ON SCOPE
+----------------
+This was a big list and I built all of it in one pass rather than
+stopping to check in after each item, since you asked me to do as much as
+possible. That's more surface area than I'd normally ship without a
+walkthrough, so: please actually click through this once the migrations
+are run, especially items 4 and 5 (the auto-cancel and the new tutor
+contact permission) — those touch real data and permissions, not just
+UI, and I'd rather you catch anything off before it's live for real
+families.
