@@ -16,7 +16,7 @@ export function SubjectRow({
   name: string;
   isActive: boolean;
 }) {
-  const [, formAction, pending] = useActionState(toggleSubjectActive, initialState);
+  const [state, formAction, pending] = useActionState(toggleSubjectActive, initialState);
 
   return (
     <div className="flex items-center justify-between border-b border-border py-3 last:border-0">
@@ -24,13 +24,16 @@ export function SubjectRow({
         <span className="font-medium text-ink">{name}</span>
         <Badge tone={isActive ? "success" : "neutral"}>{isActive ? "Active" : "Inactive"}</Badge>
       </div>
-      <form action={formAction}>
-        <input type="hidden" name="id" value={id} />
-        <input type="hidden" name="isActive" value={String(isActive)} />
-        <Button type="submit" variant="ghost" size="sm" disabled={pending}>
-          {isActive ? "Deactivate" : "Reactivate"}
-        </Button>
-      </form>
+      <div className="flex flex-col items-end gap-1">
+        <form action={formAction}>
+          <input type="hidden" name="id" value={id} />
+          <input type="hidden" name="isActive" value={String(isActive)} />
+          <Button type="submit" variant="ghost" size="sm" disabled={pending}>
+            {isActive ? "Deactivate" : "Reactivate"}
+          </Button>
+        </form>
+        {state.error && <p className="text-xs text-red-600">{state.error}</p>}
+      </div>
     </div>
   );
 }
