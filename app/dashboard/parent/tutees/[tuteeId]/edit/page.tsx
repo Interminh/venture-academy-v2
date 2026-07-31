@@ -12,11 +12,17 @@ export default async function EditTuteePage({
   const { tuteeId } = await params;
   const supabase = await createClient();
 
-  const [{ data: subjects }, { data: tutee }, { data: tuteeSubjects }, { data: slots }] =
+  const [{ data: activeSubjects }, { data: tutee }, { data: tuteeSubjects }, { data: slots }] =
     await Promise.all([
       supabase.from("subjects").select("id, name").eq("is_active", true).order("name"),
       supabase.from("tutees").select("id, first_name, grade").eq("id", tuteeId).single(),
-      supabase.from("tutee_subjects").select("subject_id").eq("tutee_id", tuteeId),
+      // Joins in the subject even if it's since been deactivated, so a
+      // subject the tutee already needs doesn't silently disappear from
+      // the form and get dropped from tutee_subjects on the next save.
+      supabase
+        .from("tutee_subjects")
+        .select("subject_id, subjects(id, name)")
+        .eq("tutee_id", tuteeId),
       supabase.from("availability_slots").select("day, start_time").eq("tutee_id", tuteeId),
     ]);
 
@@ -25,6 +31,15 @@ export default async function EditTuteePage({
   const slotKeys: SlotKey[] = (slots ?? []).map(
     (slot) => `${slot.day}|${slot.start_time}` as SlotKey
   );
+
+  const subjectsById = new Map((activeSubjects ?? []).map((s) => [s.id, s]));
+  for (const ts of tuteeSubjects ?? []) {
+    const subject = ts.subjects as unknown as { id: string; name: string } | null;
+    if (subject && !subjectsById.has(subject.id)) {
+      subjectsById.set(subject.id, subject);
+    }
+  }
+  const subjects = Array.from(subjectsById.values()).sort((a, b) => a.name.localeCompare(b.name));
 
   return (
     <div className="mx-auto max-w-2xl">
