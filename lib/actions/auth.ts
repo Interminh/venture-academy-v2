@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 
 export interface ActionState {
@@ -34,6 +35,21 @@ export async function signUp(
   }
 
   const supabase = await createClient();
+
+  // Supabase's own signUp silently "succeeds" with no error and no session
+  // for an already-registered email (anti-enumeration behavior), which
+  // would otherwise show this person a "check your email" message for a
+  // confirmation email that's never coming. Checking first gives a real
+  // answer instead. Requires migration 0007 (`is_email_registered`); if
+  // that hasn't been run yet, fall through to signUp's normal behavior
+  // rather than blocking every signup on an RPC that doesn't exist yet.
+  const { data: alreadyRegistered, error: checkError } = await supabase.rpc(
+    "is_email_registered",
+    { input_email: email }
+  );
+  if (!checkError && alreadyRegistered) {
+    return { error: "An account with this email already exists. Try logging in instead." };
+  }
 
   let role: "parent" | "tutor" = "parent";
   if (tutorCode) {
@@ -100,4 +116,53 @@ export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
   redirect("/login");
+}
+
+// Sends a recovery link through /auth/callback, which exchanges it for a
+// session and lands on /reset-password. Always returns the same success
+// message regardless of whether the email is registered, so this can't be
+// used to enumerate accounts (unlike signUp's duplicate-email check, this
+// one has no legitimate reason to tell the caller which way it went).
+export async function requestPasswordReset(
+  _prevState: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const email = String(formData.get("email") ?? "").trim();
+  if (!email) return { error: "Please enter your email." };
+
+  const supabase = await createClient();
+  const originHeaders = await headers();
+  const origin =
+    originHeaders.get("origin") ?? `https://${originHeaders.get("host")}`;
+
+  await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${origin}/auth/callback?next=/reset-password`,
+  });
+
+  return {
+    success: "If that email has an account, a reset link is on its way.",
+  };
+}
+
+export async function resetPassword(
+  _prevState: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const password = String(formData.get("password") ?? "");
+  if (password.length < 8) {
+    return { error: "Password must be at least 8 characters." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "This reset link has expired. Request a new one from the login page." };
+  }
+
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) return { error: error.message };
+
+  redirect("/dashboard");
 }

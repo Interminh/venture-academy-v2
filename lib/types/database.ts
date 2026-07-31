@@ -258,6 +258,10 @@ export interface Database {
         Args: { input_code: string };
         Returns: boolean;
       };
+      is_email_registered: {
+        Args: { input_email: string };
+        Returns: boolean;
+      };
     };
     Enums: {
       user_role: UserRole;
