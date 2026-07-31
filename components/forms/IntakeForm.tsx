@@ -35,6 +35,11 @@ export function IntakeForm({
     new Set(existing?.subjectIds ?? [])
   );
   const [slots, setSlots] = useState<Set<SlotKey>>(new Set(existing?.slots ?? []));
+  // Server Actions reset every uncontrolled field once the action resolves,
+  // even on a validation error, so a forgotten subject checkbox would
+  // otherwise wipe the name/grade the parent already filled in.
+  const [firstName, setFirstName] = useState(existing?.first_name ?? "");
+  const [grade, setGrade] = useState<string>(existing?.grade?.toString() ?? "");
 
   function toggleSubject(id: string) {
     setSelectedSubjectIds((prev) => {
@@ -60,17 +65,24 @@ export function IntakeForm({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <Label htmlFor="firstName">Student&apos;s first name</Label>
+          <Label htmlFor="firstName">Student&apos;s name</Label>
           <Input
             id="firstName"
             name="firstName"
-            defaultValue={existing?.first_name}
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
             required
           />
         </div>
         <div>
           <Label htmlFor="grade">Grade</Label>
-          <Select id="grade" name="grade" defaultValue={existing?.grade ?? ""} required>
+          <Select
+            id="grade"
+            name="grade"
+            value={grade}
+            onChange={(e) => setGrade(e.target.value)}
+            required
+          >
             <option value="" disabled>
               Select grade
             </option>
