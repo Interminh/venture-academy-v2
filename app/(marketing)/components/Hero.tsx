@@ -7,7 +7,7 @@ export function Hero() {
         Interlake High School · Bellevue School District
       </p>
       <h1 className="mx-auto max-w-3xl font-heading text-4xl font-extrabold tracking-tight text-ink sm:text-5xl">
-        Free tutoring, matched by students who actually show up for it.
+        Free tutoring for students, from students.
       </h1>
       <p className="mx-auto mt-5 max-w-xl text-base text-body sm:text-lg">
         Venture Academy Tutors pairs K-8 students with volunteer Interlake
