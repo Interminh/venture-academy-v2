@@ -61,6 +61,7 @@ export interface Database {
           first_name: string;
           grade: number;
           notes: string | null;
+          max_weekly_sessions: number | null;
           created_at: string;
         };
         Insert: {
@@ -69,12 +70,14 @@ export interface Database {
           first_name: string;
           grade: number;
           notes?: string | null;
+          max_weekly_sessions?: number | null;
           created_at?: string;
         };
         Update: Partial<{
           first_name: string;
           grade: number;
           notes: string | null;
+          max_weekly_sessions: number | null;
         }>;
         Relationships: [
           {
@@ -126,6 +129,7 @@ export interface Database {
           tutee_id: string;
           day: Weekday;
           start_time: string;
+          is_active: boolean;
           created_at: string;
         };
         Insert: {
@@ -133,12 +137,14 @@ export interface Database {
           tutee_id: string;
           day: Weekday;
           start_time: string;
+          is_active?: boolean;
           created_at?: string;
         };
         Update: Partial<{
           tutee_id: string;
           day: Weekday;
           start_time: string;
+          is_active: boolean;
         }>;
         Relationships: [
           {
@@ -225,6 +231,33 @@ export interface Database {
         Update: Partial<{
           code: string;
           is_active: boolean;
+        }>;
+        Relationships: [];
+      };
+      tutor_hours: {
+        Row: {
+          id: string;
+          tutor_id: string;
+          session_date: string;
+          hours: number;
+          student_label: string;
+          description: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          tutor_id: string;
+          session_date: string;
+          hours: number;
+          student_label: string;
+          description?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<{
+          session_date: string;
+          hours: number;
+          student_label: string;
+          description: string | null;
         }>;
         Relationships: [];
       };

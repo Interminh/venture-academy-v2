@@ -14,6 +14,15 @@ export function claimToDisplayStatus(status: ClaimStatus): SlotStatus {
   return status;
 }
 
+// Postgres `time` columns come back from Supabase as "HH:MM:SS" (e.g.
+// "16:00:00"), but every slot key built client-side (checkboxes, claim
+// forms) uses "HH:MM" with no seconds. Without normalizing, a DB-sourced
+// start_time never matches a client-built key, which is what caused the
+// edit form's availability grid to render as if nothing were selected.
+export function toHHMM(time: string): string {
+  return time.slice(0, 5);
+}
+
 export const WEEKDAYS: Weekday[] = ["mon", "tue", "wed", "thu", "fri"];
 
 export const WEEKDAY_LABELS: Record<Weekday, string> = {

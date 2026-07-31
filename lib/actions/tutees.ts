@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { toHHMM } from "@/lib/utils/slots";
 import type { Weekday } from "@/lib/types/database";
 
 export interface ActionState {
@@ -30,6 +31,9 @@ export async function createTutee(
 
   const firstName = String(formData.get("firstName") ?? "").trim();
   const grade = Number(formData.get("grade"));
+  const notes = String(formData.get("notes") ?? "").trim();
+  const maxWeeklySessionsRaw = String(formData.get("maxWeeklySessions") ?? "").trim();
+  const maxWeeklySessions = maxWeeklySessionsRaw ? Number(maxWeeklySessionsRaw) : null;
   const subjectIds = formData.getAll("subjectId").map(String);
   const slots = parseSlots(formData);
 
@@ -42,10 +46,19 @@ export async function createTutee(
   if (slots.length === 0) {
     return { error: "Please select at least one available time slot." };
   }
+  if (maxWeeklySessions !== null && (Number.isNaN(maxWeeklySessions) || maxWeeklySessions < 1)) {
+    return { error: "Max weekly sessions must be a positive number." };
+  }
 
   const { data: tutee, error: tuteeError } = await supabase
     .from("tutees")
-    .insert({ parent_id: user.id, first_name: firstName, grade })
+    .insert({
+      parent_id: user.id,
+      first_name: firstName,
+      grade,
+      notes: notes || null,
+      max_weekly_sessions: maxWeeklySessions,
+    })
     .select("id")
     .single();
 
@@ -74,8 +87,11 @@ export async function createTutee(
 }
 
 // Resyncs a tutee's subjects and availability to match the submitted form.
-// Slots with a live (pending or approved) claim are never removed, even if
-// the parent unchecks them. The claim keeps its slot until it's cancelled.
+// Unchecking a slot that has a live (pending or approved) claim now cancels
+// that claim instead of silently keeping the slot around — a parent who
+// removes an offered time is telling the tutor it's off the table. Slots
+// are soft-deleted (is_active = false), never hard-deleted, so a cancelled
+// claim's history survives (hard-deleting the slot would cascade-delete it).
 export async function updateTutee(
   _prevState: ActionState,
   formData: FormData
@@ -89,12 +105,24 @@ export async function updateTutee(
   const tuteeId = String(formData.get("tuteeId") ?? "");
   const firstName = String(formData.get("firstName") ?? "").trim();
   const grade = Number(formData.get("grade"));
+  const notes = String(formData.get("notes") ?? "").trim();
+  const maxWeeklySessionsRaw = String(formData.get("maxWeeklySessions") ?? "").trim();
+  const maxWeeklySessions = maxWeeklySessionsRaw ? Number(maxWeeklySessionsRaw) : null;
   const subjectIds = formData.getAll("subjectId").map(String);
   const submittedSlots = parseSlots(formData);
 
+  if (maxWeeklySessions !== null && (Number.isNaN(maxWeeklySessions) || maxWeeklySessions < 1)) {
+    return { error: "Max weekly sessions must be a positive number." };
+  }
+
   const { error: updateError } = await supabase
     .from("tutees")
-    .update({ first_name: firstName, grade })
+    .update({
+      first_name: firstName,
+      grade,
+      notes: notes || null,
+      max_weekly_sessions: maxWeeklySessions,
+    })
     .eq("id", tuteeId);
   if (updateError) return { error: updateError.message };
 
@@ -125,28 +153,38 @@ export async function updateTutee(
   const { data: existingSlots } = await supabase
     .from("availability_slots")
     .select("id, day, start_time")
-    .eq("tutee_id", tuteeId);
+    .eq("tutee_id", tuteeId)
+    .eq("is_active", true);
 
   const { data: liveClaims } = await supabase
     .from("claims")
-    .select("slot_id")
+    .select("id, slot_id")
     .in("status", ["pending", "approved"]);
-  const liveSlotIds = new Set((liveClaims ?? []).map((c) => c.slot_id));
+  const liveClaimIdBySlotId = new Map((liveClaims ?? []).map((c) => [c.slot_id, c.id]));
 
-  const slotKey = (s: { day: string; start_time: string }) => `${s.day}|${s.start_time}`;
+  const slotKey = (s: { day: string; start_time: string }) => `${s.day}|${toHHMM(s.start_time)}`;
   const submittedKeys = new Set(submittedSlots.map((s) => `${s.day}|${s.startTime}`));
 
-  const toRemoveSlots = (existingSlots ?? []).filter(
-    (s) => !submittedKeys.has(slotKey(s)) && !liveSlotIds.has(s.id)
-  );
+  const toRemoveSlots = (existingSlots ?? []).filter((s) => !submittedKeys.has(slotKey(s)));
   const toAddSlots = submittedSlots.filter(
     (s) => !(existingSlots ?? []).some((e) => slotKey(e) === `${s.day}|${s.startTime}`)
   );
 
+  const claimIdsToCancel = toRemoveSlots
+    .map((s) => liveClaimIdBySlotId.get(s.id))
+    .filter((id): id is string => Boolean(id));
+
+  if (claimIdsToCancel.length > 0) {
+    await supabase
+      .from("claims")
+      .update({ status: "cancelled", cancelled_by: user.id, cancelled_at: new Date().toISOString() })
+      .in("id", claimIdsToCancel);
+  }
+
   if (toRemoveSlots.length > 0) {
     await supabase
       .from("availability_slots")
-      .delete()
+      .update({ is_active: false })
       .in("id", toRemoveSlots.map((s) => s.id));
   }
   if (toAddSlots.length > 0) {

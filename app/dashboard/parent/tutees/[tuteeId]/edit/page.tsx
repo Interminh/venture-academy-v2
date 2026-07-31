@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/Card";
 import { IntakeForm } from "@/components/forms/IntakeForm";
 import type { SlotKey } from "@/components/forms/AvailabilityPicker";
+import { toHHMM } from "@/lib/utils/slots";
 
 export default async function EditTuteePage({
   params,
@@ -15,7 +16,11 @@ export default async function EditTuteePage({
   const [{ data: activeSubjects }, { data: tutee }, { data: tuteeSubjects }, { data: slots }] =
     await Promise.all([
       supabase.from("subjects").select("id, name").eq("is_active", true).order("name"),
-      supabase.from("tutees").select("id, first_name, grade").eq("id", tuteeId).single(),
+      supabase
+        .from("tutees")
+        .select("id, first_name, grade, notes, max_weekly_sessions")
+        .eq("id", tuteeId)
+        .single(),
       // Joins in the subject even if it's since been deactivated, so a
       // subject the tutee already needs doesn't silently disappear from
       // the form and get dropped from tutee_subjects on the next save.
@@ -23,13 +28,17 @@ export default async function EditTuteePage({
         .from("tutee_subjects")
         .select("subject_id, subjects(id, name)")
         .eq("tutee_id", tuteeId),
-      supabase.from("availability_slots").select("day, start_time").eq("tutee_id", tuteeId),
+      supabase
+        .from("availability_slots")
+        .select("day, start_time")
+        .eq("tutee_id", tuteeId)
+        .eq("is_active", true),
     ]);
 
   if (!tutee) notFound();
 
   const slotKeys: SlotKey[] = (slots ?? []).map(
-    (slot) => `${slot.day}|${slot.start_time}` as SlotKey
+    (slot) => `${slot.day}|${toHHMM(slot.start_time)}` as SlotKey
   );
 
   const subjectsById = new Map((activeSubjects ?? []).map((s) => [s.id, s]));
@@ -55,6 +64,8 @@ export default async function EditTuteePage({
             id: tutee.id,
             first_name: tutee.first_name,
             grade: tutee.grade,
+            notes: tutee.notes,
+            maxWeeklySessions: tutee.max_weekly_sessions,
             subjectIds: (tuteeSubjects ?? []).map((s) => s.subject_id),
             slots: slotKeys,
           }}
