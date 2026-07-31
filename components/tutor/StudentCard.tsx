@@ -8,6 +8,7 @@ export function StudentCard({
   grade,
   subjectNames,
   openCount,
+  isFullyBooked,
   isSelected,
   onClick,
 }: {
@@ -15,6 +16,7 @@ export function StudentCard({
   grade: number;
   subjectNames: string[];
   openCount: number;
+  isFullyBooked: boolean;
   isSelected: boolean;
   onClick: () => void;
 }) {
@@ -42,9 +44,13 @@ export function StudentCard({
           </Badge>
         ))}
       </div>
-      <Badge tone={openCount > 0 ? "success" : "neutral"}>
-        {openCount > 0 ? `${openCount} open time${openCount === 1 ? "" : "s"}` : "No open times"}
-      </Badge>
+      {isFullyBooked ? (
+        <Badge tone="info">Fully booked</Badge>
+      ) : (
+        <Badge tone={openCount > 0 ? "success" : "neutral"}>
+          {openCount > 0 ? `${openCount} open time${openCount === 1 ? "" : "s"}` : "No open times"}
+        </Badge>
+      )}
     </button>
   );
 }

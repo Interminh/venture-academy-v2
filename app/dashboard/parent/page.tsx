@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
 import { ButtonLink } from "@/components/ui/Button";
 import { SlotAgenda, type AgendaItem } from "@/components/slots/SlotAgenda";
 import { gradeLabel, toDisplayStatus } from "@/lib/utils/slots";
@@ -13,7 +14,7 @@ export default async function ParentDashboardPage() {
 
   const { data: tutees } = await supabase
     .from("tutees")
-    .select("id, first_name, grade")
+    .select("id, first_name, grade, notes, max_weekly_sessions")
     .eq("parent_id", user!.id)
     .order("created_at", { ascending: true });
 
@@ -51,24 +52,35 @@ export default async function ParentDashboardPage() {
       </div>
 
       {tutees.map((tutee) => {
-        const items: AgendaItem[] = (statuses ?? [])
-          .filter((s) => s.tutee_id === tutee.id)
-          .map((s) => ({
-            id: s.slot_id,
-            day: s.day,
-            startTime: s.start_time,
-            subjectName: s.claimed_subject_id
-              ? subjectNameById.get(s.claimed_subject_id)
-              : undefined,
-            status: toDisplayStatus(s.status),
-          }));
+        const tuteeStatuses = (statuses ?? []).filter((s) => s.tutee_id === tutee.id);
+        const bookedCount = tuteeStatuses.filter((s) => s.status === "approved").length;
+        const isFullyBooked =
+          tutee.max_weekly_sessions !== null && bookedCount >= tutee.max_weekly_sessions;
+
+        const items: AgendaItem[] = tuteeStatuses.map((s) => ({
+          id: s.slot_id,
+          day: s.day,
+          startTime: s.start_time,
+          subjectName: s.claimed_subject_id
+            ? subjectNameById.get(s.claimed_subject_id)
+            : undefined,
+          status: toDisplayStatus(s.status),
+        }));
 
         return (
           <Card key={tutee.id} className="p-6">
             <div className="mb-5 flex items-center justify-between">
               <div>
-                <h2 className="font-heading text-lg font-bold text-ink">{tutee.first_name}</h2>
-                <p className="text-sm text-body">{gradeLabel(tutee.grade)}</p>
+                <div className="flex items-center gap-2">
+                  <h2 className="font-heading text-lg font-bold text-ink">{tutee.first_name}</h2>
+                  {isFullyBooked && <Badge tone="info">Fully booked</Badge>}
+                </div>
+                <p className="text-sm text-body">
+                  {gradeLabel(tutee.grade)}
+                  {tutee.max_weekly_sessions !== null &&
+                    ` · ${bookedCount}/${tutee.max_weekly_sessions} sessions booked`}
+                </p>
+                {tutee.notes && <p className="mt-1 text-xs text-gray-400">{tutee.notes}</p>}
               </div>
               <Link
                 href={`/dashboard/parent/tutees/${tutee.id}/edit`}

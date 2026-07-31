@@ -17,7 +17,7 @@ export default async function TutorBrowsePage({
     supabase.from("subjects").select("id, name").eq("is_active", true).order("name"),
     supabase
       .from("tutees")
-      .select("id, first_name, grade, tutee_subjects(subjects(id, name))")
+      .select("id, first_name, grade, max_weekly_sessions, tutee_subjects(subjects(id, name, is_active))")
       .order("first_name"),
   ]);
 
@@ -45,9 +45,17 @@ export default async function TutorBrowsePage({
     id: t.id,
     firstName: t.first_name,
     grade: t.grade,
-    subjects: (t.tutee_subjects as unknown as { subjects: { id: string; name: string } | null }[])
+    maxWeeklySessions: t.max_weekly_sessions,
+    // A subject an admin has since deactivated stays attached to the
+    // tutee (an existing family's needs aren't erased), but is dropped
+    // here so it can no longer be picked as a subject for a *new* claim —
+    // otherwise "deactivating" a subject wouldn't actually retire it.
+    subjects: (
+      t.tutee_subjects as unknown as { subjects: { id: string; name: string; is_active: boolean } | null }[]
+    )
       .map((ts) => ts.subjects)
-      .filter((s): s is { id: string; name: string } => s !== null),
+      .filter((s): s is { id: string; name: string; is_active: boolean } => s !== null && s.is_active)
+      .map((s) => ({ id: s.id, name: s.name })),
     slots: (statuses ?? [])
       .filter((s) => s.tutee_id === t.id)
       .map((s) => ({

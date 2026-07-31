@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { Input, Label, Select, FieldError } from "@/components/ui/Input";
+import { Input, Label, Select, Textarea, FieldError } from "@/components/ui/Input";
 import { AvailabilityPicker, type SlotKey } from "./AvailabilityPicker";
 import { createTutee, updateTutee, type ActionState } from "@/lib/actions/tutees";
 
@@ -17,6 +17,8 @@ interface ExistingTutee {
   id: string;
   first_name: string;
   grade: number;
+  notes: string | null;
+  maxWeeklySessions: number | null;
   subjectIds: string[];
   slots: SlotKey[];
 }
@@ -40,6 +42,10 @@ export function IntakeForm({
   // otherwise wipe the name/grade the parent already filled in.
   const [firstName, setFirstName] = useState(existing?.first_name ?? "");
   const [grade, setGrade] = useState<string>(existing?.grade?.toString() ?? "");
+  const [notes, setNotes] = useState(existing?.notes ?? "");
+  const [maxWeeklySessions, setMaxWeeklySessions] = useState(
+    existing?.maxWeeklySessions?.toString() ?? ""
+  );
 
   function toggleSubject(id: string) {
     setSelectedSubjectIds((prev) => {
@@ -127,6 +133,35 @@ export function IntakeForm({
           One shared schedule below. A tutor picks which of these subjects
           they&apos;re helping with when they claim a time.
         </p>
+      </div>
+
+      <div>
+        <Label htmlFor="maxWeeklySessions">Max sessions per week (optional)</Label>
+        <Input
+          id="maxWeeklySessions"
+          name="maxWeeklySessions"
+          type="number"
+          min={1}
+          placeholder="No limit"
+          className="max-w-40"
+          value={maxWeeklySessions}
+          onChange={(e) => setMaxWeeklySessions(e.target.value)}
+        />
+        <p className="mt-1.5 text-xs text-gray-400">
+          Once this many sessions are booked in a week, we&apos;ll flag this student as fully booked.
+        </p>
+      </div>
+
+      <div>
+        <Label htmlFor="notes">Additional information (optional)</Label>
+        <Textarea
+          id="notes"
+          name="notes"
+          rows={3}
+          placeholder="Anything a tutor or director should know — learning style, prior tutors, scheduling constraints, etc."
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+        />
       </div>
 
       <AvailabilityPicker selected={slots} onToggle={toggleSlot} />
