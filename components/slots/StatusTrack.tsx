@@ -27,11 +27,10 @@ const END_STATE_STYLES: Record<"cancelled" | "rejected", string> = {
   rejected: "bg-status-cancelled-bg text-status-cancelled",
 };
 
-// The one recurring, distinctive piece of UI in the app: a compact
-// three-stage tracker that visualizes where a slot actually sits in its
-// real lifecycle (open -> pending -> booked). Cancelled/rejected claims
-// render as a separate greyed-out end state rather than a track position,
-// since they've exited the normal flow rather than progressed through it.
+// Compact three-stage tracker showing where a slot sits in its lifecycle
+// (open -> pending -> booked). Cancelled/rejected claims get a separate
+// greyed-out badge instead of a track position since they've dropped out
+// of the normal flow rather than moved through it.
 export function StatusTrack({
   status,
   className,

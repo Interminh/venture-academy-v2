@@ -1,18 +1,18 @@
 -- Moves from "one schedule per student per subject" to "one schedule per
--- student" — a tutee has a single weekly availability grid, and a tutor
--- picks which of the tutee's needed subjects they're claiming a given
--- time slot for at claim time, rather than the subject being baked into
--- the slot itself.
+-- student." A tutee now has a single weekly availability grid, and a
+-- tutor picks which of the tutee's needed subjects they're claiming a
+-- given time slot for at claim time, instead of the subject being baked
+-- into the slot itself.
 --
 -- Pre-launch test data doesn't fit the new shape (it was one row per
--- subject+slot), so it's cleared here rather than migrated — nothing real
+-- subject+slot), so it's cleared here rather than migrated. Nothing real
 -- is lost this early.
 
 begin;
 
 truncate table claims, availability_slots;
 
--- Must drop the view before dropping the column it reads — slot_status
+-- Must drop the view before dropping the column it reads. slot_status
 -- (from 0001) still references availability_slots.subject_id at this point.
 drop view slot_status;
 
@@ -27,8 +27,8 @@ alter table claims alter column subject_id set not null;
 grant select, insert, update, delete on availability_slots, claims
   to anon, authenticated, service_role;
 
--- slot_status no longer carries a subject (the slot itself has none now);
--- it instead surfaces the subject of whatever live claim exists on it, if
+-- slot_status no longer carries a subject (the slot itself has none now).
+-- It instead surfaces the subject of whatever live claim exists on it, if
 -- any, since that's the only place a subject is attached post-claim.
 create view slot_status
 with (security_invoker = on) as

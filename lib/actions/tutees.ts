@@ -9,8 +9,8 @@ export interface ActionState {
   error?: string;
 }
 
-// Slot checkboxes in the form are named "slot" with value "day|start_time" —
-// one shared schedule per student, independent of subject.
+// Slot checkboxes in the form are named "slot" with value "day|start_time".
+// One shared schedule per student, independent of subject.
 function parseSlots(formData: FormData): { day: Weekday; startTime: string }[] {
   return formData.getAll("slot").map((raw) => {
     const [day, startTime] = String(raw).split("|");
@@ -73,9 +73,9 @@ export async function createTutee(
   redirect("/dashboard/parent");
 }
 
-// Resyncs a tutee's subjects + availability to match the submitted form.
-// Slots with a live (pending/approved) claim are never removed, even if the
-// parent unchecks them — the claim keeps its slot until it's cancelled.
+// Resyncs a tutee's subjects and availability to match the submitted form.
+// Slots with a live (pending or approved) claim are never removed, even if
+// the parent unchecks them. The claim keeps its slot until it's cancelled.
 export async function updateTutee(
   _prevState: ActionState,
   formData: FormData

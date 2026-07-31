@@ -11,7 +11,7 @@ export default async function AdminSubjectsPage() {
     <div className="mx-auto max-w-xl">
       <h1 className="mb-1 font-heading text-2xl font-bold text-ink">Subjects</h1>
       <p className="mb-6 text-body">
-        Manage which subjects parents and tutors can pick from — no code
+        Manage which subjects parents and tutors can pick from. No code
         changes needed to add or retire one.
       </p>
 

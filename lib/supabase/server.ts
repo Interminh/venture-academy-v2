@@ -22,28 +22,10 @@ export async function createClient() {
               cookieStore.set(name, value, options)
             );
           } catch {
-            // Called from a Server Component — session refresh already
-            // happens in middleware, so this can be safely ignored.
+            // Called from a Server Component, where session refresh
+            // already happens in middleware, so this can be ignored.
           }
         },
-      },
-    }
-  );
-}
-
-// Service-role client for privileged, server-only operations (admin invite
-// flow). Never import this from a Client Component or expose the key to
-// the browser — it bypasses RLS entirely.
-export function createServiceRoleClient() {
-  return createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return [];
-        },
-        setAll() {},
       },
     }
   );

@@ -7,8 +7,8 @@ import type { Weekday } from "@/lib/types/database";
 export type SlotKey = `${Weekday}|${string}`;
 
 // A student's single weekly availability grid: Mon-Fri x half-hour start
-// times. Each checked cell becomes a `slot` form field valued "day|time" —
-// availability isn't tied to a subject; a tutor picks the subject when
+// times. Each checked cell becomes a `slot` form field valued "day|time".
+// Availability isn't tied to a subject. A tutor picks the subject when
 // they claim a specific time.
 export function AvailabilityPicker({
   selected,

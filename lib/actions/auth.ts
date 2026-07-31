@@ -9,13 +9,14 @@ export interface ActionState {
 }
 
 // Both parents and tutors sign up through this same form. Role is never
-// read directly off the submitted form — a client can't just request
-// role=tutor. Instead, an optional tutor code is checked server-side via
-// `is_valid_tutor_code`, a security-definer function that can confirm a
-// code is valid without this (unauthenticated) request ever being able to
-// read the codes table itself. No code -> parent. Valid code -> tutor.
-// Invalid code -> rejected, so a typo doesn't silently create a parent
-// account when the person meant to sign up as a tutor.
+// read directly off the submitted form, a client can't just request
+// role=tutor. Instead, an optional tutor code is checked server-side
+// through `is_valid_tutor_code`, a security-definer function that can
+// confirm a code is valid without this (unauthenticated) request ever
+// being able to read the codes table itself. No code means parent. A
+// valid code means tutor. An invalid code is rejected outright, so a
+// typo doesn't silently create a parent account for someone who meant
+// to sign up as a tutor.
 export async function signUp(
   _prevState: ActionState,
   formData: FormData
@@ -40,7 +41,7 @@ export async function signUp(
       input_code: tutorCode,
     });
     if (codeError) return { error: codeError.message };
-    if (!isValid) return { error: "That tutor code isn't valid — check with a club director." };
+    if (!isValid) return { error: "That tutor code isn't valid. Check with a club director." };
     role = "tutor";
   }
 
@@ -57,12 +58,11 @@ export async function signUp(
   }
 
   // If the project requires email confirmation, signUp succeeds but returns
-  // no session — redirecting to /dashboard here would just bounce straight
-  // back to /login with no explanation. Tell the user what's actually next
-  // instead of silently failing.
+  // no session. Redirecting to /dashboard here would just bounce straight
+  // back to /login with no explanation, so tell the user what's next instead.
   if (!data.session) {
     return {
-      success: "Almost done — check your email for a confirmation link before logging in.",
+      success: "Almost done. Check your email for a confirmation link before logging in.",
     };
   }
 
@@ -84,11 +84,11 @@ export async function signIn(
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
-    // Surface the "needs confirmation" case distinctly — it's a different,
-    // actionable problem from a wrong password, and looks identical to the
-    // user if we collapse both into one generic message.
+    // Needing email confirmation is a different, fixable problem than a
+    // wrong password, and looks identical to the user if we collapse both
+    // into one generic message, so call it out separately.
     if (error.code === "email_not_confirmed") {
-      return { error: "Please confirm your email first — check your inbox for the confirmation link." };
+      return { error: "Please confirm your email first. Check your inbox for the confirmation link." };
     }
     return { error: "Incorrect email or password." };
   }

@@ -20,16 +20,16 @@ export default async function AdminUsersPage() {
       <div>
         <h1 className="mb-1 font-heading text-2xl font-bold text-ink">Tutor sign-up codes</h1>
         <p className="mb-6 text-body">
-          Share an active code with tutors — they enter it at{" "}
+          Share an active code with tutors and they can enter it at{" "}
           <code className="rounded bg-bg-soft px-1.5 py-0.5 font-mono text-sm">/signup</code>{" "}
-          to register their own account as a tutor, no invite email needed.
+          to register their own account. No invite email needed.
         </p>
         <Card className="mb-6 max-w-xl p-5">
           <TutorCodeForm />
         </Card>
         <Card className="max-w-xl p-5">
           {(codes ?? []).length === 0 && (
-            <p className="py-4 text-center text-sm text-body">No codes yet — add one above.</p>
+            <p className="py-4 text-center text-sm text-body">No codes yet. Add one above.</p>
           )}
           {(codes ?? []).map((c) => (
             <TutorCodeRow key={c.id} id={c.id} code={c.code} isActive={c.is_active} />
@@ -40,7 +40,7 @@ export default async function AdminUsersPage() {
       <div>
         <h1 className="mb-1 font-heading text-2xl font-bold text-ink">All accounts</h1>
         <p className="mb-6 text-body">
-          Change anyone&apos;s role directly — useful for promoting a tutor to
+          Change anyone&apos;s role directly. Useful for promoting a tutor to
           admin, or fixing a signup mistake.
         </p>
         <div className="overflow-x-auto rounded-xl border border-border bg-white">

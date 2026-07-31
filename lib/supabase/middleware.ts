@@ -9,9 +9,9 @@ const ROLE_HOME: Record<string, string> = {
 };
 
 // Refreshes the Supabase session cookie on every request and enforces
-// role-gating for /dashboard/{admin,tutor,parent}/* route groups. Reads the
-// role from `profiles` (not a client-settable value) so gating can't be
-// bypassed by tampering with anything the browser controls.
+// role-gating for /dashboard/{admin,tutor,parent}/* route groups. Reads
+// the role from `profiles`, not a client-settable value, so gating can't
+// be bypassed by tampering with anything the browser controls.
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
@@ -42,8 +42,8 @@ export async function updateSession(request: NextRequest) {
   const isDashboardRoute = path.startsWith("/dashboard");
 
   // Redirects need to carry forward any session cookies that getUser() just
-  // refreshed on supabaseResponse — building a bare NextResponse.redirect()
-  // instead would silently drop a just-refreshed token on this request.
+  // refreshed on supabaseResponse. A bare NextResponse.redirect() would
+  // silently drop a just-refreshed token on this request.
   function redirect(pathname: string, extraParams?: Record<string, string>) {
     const url = request.nextUrl.clone();
     url.pathname = pathname;

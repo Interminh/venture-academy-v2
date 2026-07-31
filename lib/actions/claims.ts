@@ -10,12 +10,12 @@ export interface ActionState {
 
 const UNIQUE_VIOLATION = "23505";
 
-// A tutor claims an open slot for one of the student's needed subjects
-// (a slot itself isn't tied to any subject — that's chosen here). The
-// partial unique index on claims(slot_id) WHERE status IN
-// ('pending','approved') is what actually makes this race-safe — if
-// another tutor claimed it a moment ago, this insert fails and we surface
-// a friendly message instead of a stack trace.
+// A tutor claims an open slot for one of the student's needed subjects.
+// A slot itself isn't tied to any subject, that gets chosen here. The
+// partial unique index on claims(slot_id) for pending/approved rows is
+// what actually makes this race-safe: if another tutor claimed it a
+// moment ago, this insert fails and we show a friendly message instead
+// of a stack trace.
 export async function submitClaim(
   _prevState: ActionState,
   formData: FormData
@@ -51,18 +51,18 @@ export async function submitClaim(
 
   if (error) {
     if (error.code === UNIQUE_VIOLATION) {
-      return { error: "Someone just claimed this slot — try another one." };
+      return { error: "Someone just claimed this slot. Try another one." };
     }
     return { error: error.message };
   }
 
   revalidatePath("/dashboard/tutor");
   revalidatePath("/dashboard/tutor/claims");
-  return { success: "Claim submitted — a director will review it shortly." };
+  return { success: "Claim submitted. A director will review it shortly." };
 }
 
-// Tutor self-cancel: only allowed on their own approved claim (enforced by
-// the claims_update_tutor_cancel RLS policy), reopening the slot to Open.
+// Tutor self-cancel: only allowed on their own approved claim, enforced by
+// the claims_update_tutor_cancel RLS policy. Reopens the slot to open.
 export async function cancelOwnClaim(
   _prevState: ActionState,
   formData: FormData
@@ -88,7 +88,7 @@ export async function cancelOwnClaim(
 
   revalidatePath("/dashboard/tutor");
   revalidatePath("/dashboard/tutor/claims");
-  return { success: "Booking cancelled — the slot is open again." };
+  return { success: "Booking cancelled. The slot is open again." };
 }
 
 // --- Admin actions ---
@@ -139,7 +139,7 @@ export async function rejectClaim(
   return { success: "Claim rejected." };
 }
 
-// Admin force-cancel: same reopen behavior as a tutor self-cancel, but
+// Admin force-cancel: same reopen behavior as a tutor self-cancel, but it
 // works from any status and is attributed to the admin, not the tutor.
 export async function forceCancelClaim(
   _prevState: ActionState,

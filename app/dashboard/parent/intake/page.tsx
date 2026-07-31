@@ -14,8 +14,8 @@ export default async function IntakePage() {
     <div className="mx-auto max-w-2xl">
       <h1 className="mb-1 font-heading text-2xl font-bold text-ink">Add a student</h1>
       <p className="mb-6 text-body">
-        Tell us about your student — this is what tutors will see when
-        browsing open slots.
+        Tell us about your student. This is what tutors will see when they
+        browse open slots.
       </p>
       <Card className="p-6">
         <IntakeForm subjects={subjects ?? []} />

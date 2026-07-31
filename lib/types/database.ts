@@ -1,10 +1,9 @@
-// Hand-written to match supabase/migrations/0001_init.sql until a real
+// Hand-written to match the migrations in supabase/migrations until a real
 // Supabase project exists. Once connected, regenerate with:
 //   npx supabase gen types typescript --project-id <ref> > lib/types/database.ts
-// and this file (including this comment) will be overwritten — that's expected.
-// `Relationships: []` on every table/view isn't real FK metadata, just what
-// @supabase/postgrest-js's GenericTable/GenericView types require to be
-// structurally valid — harmless as an empty array until regenerated.
+// (this file gets overwritten, that's fine)
+// The `Relationships: []` entries aren't real foreign key metadata, just
+// what @supabase/postgrest-js expects to type-check embedded queries.
 
 export type UserRole = "admin" | "tutor" | "parent";
 export type ClaimStatus = "pending" | "approved" | "rejected" | "cancelled";

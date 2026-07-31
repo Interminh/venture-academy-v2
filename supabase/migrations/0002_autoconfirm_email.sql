@@ -2,12 +2,12 @@
 -- clicking an email link or on the "Confirm email" toggle in the Supabase
 -- dashboard (which moves around between dashboard redesigns and can be
 -- awkward to find). Trade-off: anyone can register with an email address
--- they don't actually control, since there's no verification step anymore —
--- acceptable for a small, trust-based club tool where tutor/admin accounts
--- are invited directly and parents are known to the club. If you'd rather
--- require real verification later (e.g. once this is public-facing), drop
--- this trigger and set up the dashboard toggle + a custom SMTP sender
--- instead (see SETUP.md).
+-- they don't actually control, since there's no verification step anymore.
+-- That's acceptable for a small, trust-based club tool where tutors need
+-- a code from a director to sign up and parents are known to the club.
+-- If you'd rather require real verification later (e.g. once this is
+-- public-facing), drop this trigger and set up the dashboard toggle plus
+-- a custom SMTP sender instead (see SETUP.md).
 
 begin;
 

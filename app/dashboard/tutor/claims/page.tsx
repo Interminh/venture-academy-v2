@@ -18,8 +18,8 @@ export default async function MyClaimsPage() {
       )
       .eq("tutor_id", user!.id)
       .order("requested_at", { ascending: false }),
-    // Only ever returns rows for tutees this tutor has an APPROVED claim
-    // against — that's enforced by the view itself, not just this filter.
+    // The view itself only returns rows for tutees this tutor has an
+    // approved claim against, not just this filter.
     supabase.from("tutor_visible_contacts").select("tutee_id, parent_email").eq("tutor_id", user!.id),
   ]);
 

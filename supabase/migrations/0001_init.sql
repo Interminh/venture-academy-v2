@@ -1,4 +1,4 @@
--- Venture Academy Tutors v2 — initial schema
+-- Venture Academy Tutors v2: initial schema
 -- Enums, tables, derived-status views, RLS policies, and the new-user trigger.
 -- Wrapped in an explicit transaction so a failure partway through (e.g. a
 -- statement ordering bug) rolls back everything instead of leaving some
@@ -15,7 +15,7 @@ create type claim_status as enum ('pending', 'approved', 'rejected', 'cancelled'
 create type weekday as enum ('mon', 'tue', 'wed', 'thu', 'fri');
 
 -- ---------------------------------------------------------------------------
--- profiles — 1:1 with auth.users. No phone number, no personal data beyond
+-- profiles: 1:1 with auth.users. No phone number, no personal data beyond
 -- what account creation itself required (email + a display name).
 -- ---------------------------------------------------------------------------
 
@@ -72,7 +72,7 @@ create policy "profiles_select" on profiles
 
 -- Note: a second `profiles` select policy (`profiles_select_approved_tutor`)
 -- is added further down, after `tutees`/`availability_slots`/`claims`
--- exist — it references all three, so it can't be created this early.
+-- exist. It references all three, so it can't be created this early.
 
 create policy "profiles_update_self_or_admin" on profiles
   for update using (id = auth.uid() or auth_role() = 'admin');
@@ -81,7 +81,7 @@ create policy "profiles_update_self_or_admin" on profiles
 -- definer trigger), so no authenticated client can insert into profiles directly.
 
 -- ---------------------------------------------------------------------------
--- subjects — admin-managed, replaces the old hardcoded <select>.
+-- subjects: admin-managed, replaces the old hardcoded <select>.
 -- ---------------------------------------------------------------------------
 
 create table subjects (
@@ -100,7 +100,7 @@ create policy "subjects_write_admin" on subjects
   for all using (auth_role() = 'admin') with check (auth_role() = 'admin');
 
 -- ---------------------------------------------------------------------------
--- tutees — the K-8 kids being tutored. Owned by a parent profile. First
+-- tutees: the K-8 kids being tutored. Owned by a parent profile. First
 -- name / nickname only, no last name, matching the old roster's practice.
 -- ---------------------------------------------------------------------------
 
@@ -130,7 +130,7 @@ create policy "tutees_delete_admin" on tutees
   for delete using (auth_role() = 'admin');
 
 -- ---------------------------------------------------------------------------
--- tutee_subjects — which subjects a tutee needs (many-to-many).
+-- tutee_subjects: which subjects a tutee needs (many-to-many).
 -- ---------------------------------------------------------------------------
 
 create table tutee_subjects (
@@ -160,7 +160,7 @@ create policy "tutee_subjects_write" on tutee_subjects
   );
 
 -- ---------------------------------------------------------------------------
--- availability_slots — the day+time grid a parent opens up for a tutee's
+-- availability_slots: the day+time grid a parent opens up for a tutee's
 -- subject. Status (open/pending/booked) is derived from claims, not stored
 -- here, so slot state and claim state can never drift apart.
 -- ---------------------------------------------------------------------------
@@ -198,7 +198,7 @@ create policy "availability_slots_write" on availability_slots
   );
 
 -- ---------------------------------------------------------------------------
--- claims — the core workflow table. Never deleted; every transition is a
+-- claims: the core workflow table. Never deleted, every transition is a
 -- new status value on the same row, giving a full audit trail.
 -- ---------------------------------------------------------------------------
 
@@ -224,11 +224,11 @@ create unique index one_live_claim_per_slot
 
 alter table claims enable row level security;
 
--- Any tutor can see the status (and claiming tutor_id) of ANY claim, not
--- just their own — this is required for the derived `slot_status` view to
--- correctly show "Pending"/"Booked" to every tutor browsing the roster, not
--- just the tutor who made the claim. Tutor identity isn't sensitive within
--- the club; parent/tutee contact info stays separately gated via
+-- Any tutor can see the status (and claiming tutor_id) of any claim, not
+-- just their own. The derived `slot_status` view needs this to correctly
+-- show "Pending"/"Booked" to every tutor browsing the roster, not just
+-- the tutor who made the claim. Tutor identity isn't sensitive within the
+-- club; parent/tutee contact info stays separately gated behind
 -- `tutor_visible_contacts`, which only unlocks after approval.
 create policy "claims_select" on claims
   for select using (
@@ -247,20 +247,20 @@ create policy "claims_insert_tutor" on claims
 create policy "claims_update_admin" on claims
   for update using (auth_role() = 'admin');
 
--- A tutor may only cancel their OWN claim, and only from 'approved' — this
+-- A tutor may only cancel their own claim, and only from 'approved'. This
 -- is the tutor self-cancel path; every other transition is admin-only.
 create policy "claims_update_tutor_cancel" on claims
   for update using (tutor_id = auth.uid() and status = 'approved')
   with check (tutor_id = auth.uid() and status = 'cancelled');
 
--- No delete policy for anyone — claim rows are immutable audit history.
+-- No delete policy for anyone. Claim rows are immutable audit history.
 
 -- Lets a tutor read a parent's profile (display name + email) only once
--- they have an approved claim against that parent's tutee — this is what
--- makes `tutor_visible_contacts` actually return rows for the tutor side of
--- the join, without opening `profiles` up to all tutors broadly. Defined
--- here (not alongside profiles' other policies) because it depends on
--- `tutees`, `availability_slots`, and `claims` all existing first.
+-- they have an approved claim against that parent's tutee. This is what
+-- makes `tutor_visible_contacts` actually return rows for the tutor side
+-- of the join, without opening `profiles` up to all tutors broadly.
+-- Defined here, not alongside profiles' other policies, because it
+-- depends on `tutees`, `availability_slots`, and `claims` all existing.
 create policy "profiles_select_approved_tutor" on profiles
   for select using (
     id in (
@@ -273,8 +273,8 @@ create policy "profiles_select_approved_tutor" on profiles
   );
 
 -- ---------------------------------------------------------------------------
--- Derived status view — drives the StatusTrack UI. 'approved' is displayed
--- as "Booked" in the app; kept as 'approved' here to match the enum.
+-- Derived status view, drives the StatusTrack UI. 'approved' is displayed
+-- as "Booked" in the app but kept as 'approved' here to match the enum.
 -- ---------------------------------------------------------------------------
 
 create view slot_status
@@ -293,7 +293,7 @@ left join claims c
   on c.slot_id = s.id and c.status in ('pending', 'approved');
 
 -- ---------------------------------------------------------------------------
--- tutor_visible_contacts — exposes a parent's email (only) to a tutor once
+-- tutor_visible_contacts: exposes a parent's email (only) to a tutor once
 -- their claim on that tutee is approved. No phone field exists anywhere.
 -- ---------------------------------------------------------------------------
 

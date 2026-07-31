@@ -41,7 +41,7 @@ $$;
 grant execute on function is_valid_tutor_code(text) to anon, authenticated;
 
 -- Explicit, not just relying on the ALTER DEFAULT PRIVILEGES from
--- 0003_grants.sql — see that file for why this base grant matters even
+-- 0003_grants.sql. See that file for why this base grant matters even
 -- though RLS policies already exist above.
 grant select, insert, update, delete on tutor_signup_codes
   to anon, authenticated, service_role;

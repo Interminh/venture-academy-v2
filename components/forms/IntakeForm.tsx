@@ -112,7 +112,7 @@ export function IntakeForm({
           })}
         </div>
         <p className="mt-2 text-xs text-gray-400">
-          One shared schedule below — a tutor picks which of these subjects
+          One shared schedule below. A tutor picks which of these subjects
           they&apos;re helping with when they claim a time.
         </p>
       </div>

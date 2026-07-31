@@ -14,8 +14,8 @@ export default function SignupPage() {
             Create an account
           </h1>
           <p className="mb-6 text-sm text-body">
-            For parents/guardians signing a student up for tutoring, and for
-            Interlake tutors — tutors need a code from a club director.
+            For parents signing their student up for tutoring, and for
+            Interlake tutors (you&apos;ll need a code from a club director).
           </p>
           <SignupForm />
         </Card>

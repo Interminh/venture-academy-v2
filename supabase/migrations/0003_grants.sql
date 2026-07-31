@@ -1,8 +1,8 @@
 -- Grants the baseline table/schema privileges Supabase's own project
 -- bootstrap normally sets up automatically. Without these, RLS policies
--- never even get evaluated — Postgres blocks the query at the privilege
--- check before it gets that far, which is why every role (including
--- service_role) was hitting "permission denied for table profiles" even
+-- never even get evaluated. Postgres blocks the query at the privilege
+-- check before it gets that far, which is why every role, including
+-- service_role, was hitting "permission denied for table profiles" even
 -- though the RLS policies themselves were correct.
 
 begin;

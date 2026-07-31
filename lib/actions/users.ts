@@ -9,9 +9,9 @@ export interface ActionState {
   success?: string;
 }
 
-// Promotes/demotes an existing account. Admin-only, and an admin can't
-// change their own role here — prevents a solo admin from accidentally
-// locking themselves out by fat-fingering their own row.
+// Promotes or demotes an existing account. Admin-only. An admin can't
+// change their own role here so a solo admin can't lock themselves out
+// by accident.
 export async function updateUserRole(
   _prevState: ActionState,
   formData: FormData
@@ -29,7 +29,7 @@ export async function updateUserRole(
     return { error: "Invalid role." };
   }
   if (targetId === user.id) {
-    return { error: "You can't change your own role here — ask another admin." };
+    return { error: "You can't change your own role here. Ask another admin." };
   }
 
   const { error } = await supabase.from("profiles").update({ role }).eq("id", targetId);
