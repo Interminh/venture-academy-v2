@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { ButtonLink } from "@/components/ui/Button";
 
@@ -6,9 +7,14 @@ export function SiteHeader() {
     <header className="sticky top-0 z-50 border-b border-border bg-white/90 backdrop-blur">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
         <Link href="/" className="flex items-center gap-2.5">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary font-heading text-sm font-extrabold text-white">
-            VA
-          </span>
+          <Image
+            src="/vat-logo.png"
+            alt="Venture Academy Tutors"
+            width={40}
+            height={40}
+            className="h-10 w-10 shrink-0 rounded-full"
+            priority
+          />
           <span className="font-heading text-lg font-extrabold text-ink">
             Venture Academy Tutors
           </span>
