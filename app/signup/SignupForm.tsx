@@ -11,6 +11,12 @@ const initialState: ActionState = {};
 export function SignupForm() {
   const [state, formAction, pending] = useActionState(signUp, initialState);
   const [isTutor, setIsTutor] = useState(false);
+  // Server Actions reset every field once the action resolves, even on
+  // error, so an invalid tutor code or a rejected password would otherwise
+  // wipe the name/email/code the user already typed correctly.
+  const [displayName, setDisplayName] = useState("");
+  const [email, setEmail] = useState("");
+  const [tutorCode, setTutorCode] = useState("");
 
   if (state.success) {
     return (
@@ -27,11 +33,27 @@ export function SignupForm() {
     <form action={formAction} className="flex flex-col gap-4">
       <div>
         <Label htmlFor="displayName">Your name</Label>
-        <Input id="displayName" name="displayName" type="text" autoComplete="name" required />
+        <Input
+          id="displayName"
+          name="displayName"
+          type="text"
+          autoComplete="name"
+          required
+          value={displayName}
+          onChange={(e) => setDisplayName(e.target.value)}
+        />
       </div>
       <div>
         <Label htmlFor="email">Email</Label>
-        <Input id="email" name="email" type="email" autoComplete="email" required />
+        <Input
+          id="email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
       </div>
       <div>
         <Label htmlFor="password">Password</Label>
@@ -65,6 +87,8 @@ export function SignupForm() {
             placeholder="Get this from a club director"
             autoComplete="off"
             required
+            value={tutorCode}
+            onChange={(e) => setTutorCode(e.target.value)}
           />
         </div>
       )}

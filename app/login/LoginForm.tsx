@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
 import { signIn, type ActionState } from "@/lib/actions/auth";
 import { Button } from "@/components/ui/Button";
@@ -10,15 +10,33 @@ const initialState: ActionState = {};
 
 export function LoginForm() {
   const [state, formAction, pending] = useActionState(signIn, initialState);
+  // Server Actions reset every field in the form (including email) once the
+  // action resolves, success or failure. Keeping email in React state
+  // instead of letting it be uncontrolled means a wrong password doesn't
+  // also force the user to retype their email.
+  const [email, setEmail] = useState("");
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
       <div>
         <Label htmlFor="email">Email</Label>
-        <Input id="email" name="email" type="email" autoComplete="email" required />
+        <Input
+          id="email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
       </div>
       <div>
-        <Label htmlFor="password">Password</Label>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="password">Password</Label>
+          <Link href="/forgot-password" className="mb-1.5 text-sm font-medium text-primary hover:underline">
+            Forgot password?
+          </Link>
+        </div>
         <Input
           id="password"
           name="password"
