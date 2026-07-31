@@ -140,7 +140,8 @@ export async function requestPasswordReset(
   });
 
   return {
-    success: "If that email has an account, a reset link is on its way.",
+    success:
+      "If that email has an account, a reset link is on its way. Don't see it in a few minutes? Check your spam/junk folder.",
   };
 }
 
