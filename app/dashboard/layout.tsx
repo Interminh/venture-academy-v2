@@ -12,13 +12,15 @@ const NAV_BY_ROLE: Record<string, { href: string; label: string }[]> = {
     { href: "/dashboard/admin/subjects", label: "Subjects" },
     { href: "/dashboard/admin/tutees", label: "Students" },
     { href: "/dashboard/admin/users", label: "Users" },
+    { href: "/dashboard/admin/stats", label: "Stats" },
   ],
   tutor: [
     { href: "/dashboard/tutor", label: "Browse slots" },
-    { href: "/dashboard/tutor/claims", label: "My claims" },
+    { href: "/dashboard/tutor/claims", label: "My sessions" },
   ],
   parent: [
     { href: "/dashboard/parent", label: "My students" },
+    { href: "/dashboard/parent/sessions", label: "Sessions" },
     { href: "/dashboard/parent/intake", label: "Add a student" },
   ],
 };
