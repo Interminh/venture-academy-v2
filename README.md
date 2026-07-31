@@ -112,5 +112,5 @@ MIT. See [`LICENSE`](./LICENSE).
 
 ## Team
 
-Built and maintained by the Venture Academy Tutors club directors at
-Interlake High School: Violet Ha, Minh Do, and Saahil Shah.
+Built and maintained by the Venture Academy Tutors club director *tech-lead* at
+Interlake High School: Minh Do
