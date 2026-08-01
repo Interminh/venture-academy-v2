@@ -1,13 +1,14 @@
 Future:
--Notification emails?
+-Contact me?
+-Notifications?
 -Add more subjects?
 -When something is deactivated (like a subject) or canceled (like session) have a way to delete it off the screen after
 
 
 Parent front:
--Delete students?
+-Delete students (then all tutor sessions are gone)
 -What happens if you change weekly avaiability while session is pending or booked (should auto cancel)
-
+-Bug: I made 5 pending sessions (on a 3 session max student) and I was able to accept all 5 so now they have 5 booked sessions. (For now let's do when pending requests reach max session limit do not allow any more pending)
 
 
 
