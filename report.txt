@@ -1,24 +1,20 @@
 Future:
 -Notification emails?
 -Add more subjects?
+-When something is deactivated (like a subject) or canceled (like session) have a way to delete it off the screen after
 
-Next:
-Have login stay within tab context (even with reload)
 
 Parent front:
-For all accounts (once you login then on the same tab you should be able to go back to landing page and still be log-in, so it would say home in top right instead of log in + sign up )
-Student first name change to full name
-When you click edit the weekly availability should auto fill with the existing values, not give a balnk screen
-What happens if you change weekly avaiability while session is pending or booked (should auto cancel)
-Parent should get tutor information upon session booked (another tab at the top called sessions that contains booked session, tutor name, email)
-For each student there should be a way to put maximum amount of sessions they want weekly, once two have been booked then that student is updated as full (Probably can stay on the screen but fully booked must be apparant)
-When you add a student we could do a free-text box where you can state "Additional Information"
+-Delete students?
+-What happens if you change weekly avaiability while session is pending or booked (should auto cancel)
+
+
+
+
+
+
 
 Tutor front:
-We could have a tab at the top with "My sessions" and it would show booked sessions along with contact infromation. 
-In the "My sessions" part having some way to enter your hours:
-Date | Hours | Student (or other) | Description
+
 
 Admin front:
-Have a dashboard to see things such as total hours tutored, etc.
-Deactivating subjects does not work
