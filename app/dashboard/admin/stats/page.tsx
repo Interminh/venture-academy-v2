@@ -14,14 +14,12 @@ export default async function AdminStatsPage() {
   const supabase = await createClient();
 
   const [
-    { count: parentCount },
     { count: tutorCount },
     { count: tuteeCount },
     { count: pendingCount },
     { count: approvedCount },
     { data: hoursLog },
   ] = await Promise.all([
-    supabase.from("profiles").select("*", { count: "exact", head: true }).eq("role", "parent"),
     supabase.from("profiles").select("*", { count: "exact", head: true }).eq("role", "tutor"),
     supabase.from("tutees").select("*", { count: "exact", head: true }),
     supabase.from("claims").select("*", { count: "exact", head: true }).eq("status", "pending"),
@@ -52,11 +50,10 @@ export default async function AdminStatsPage() {
         <h1 className="mb-1 font-heading text-2xl font-bold text-ink">Stats</h1>
         <p className="mb-6 text-body">A snapshot of the program.</p>
 
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <StatTile label="Total hours tutored" value={totalHours} />
           <StatTile label="Students" value={tuteeCount ?? 0} />
           <StatTile label="Tutors" value={tutorCount ?? 0} />
-          <StatTile label="Families" value={parentCount ?? 0} />
           <StatTile label="Booked sessions" value={approvedCount ?? 0} />
         </div>
         {(pendingCount ?? 0) > 0 && (

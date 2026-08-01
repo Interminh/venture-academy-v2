@@ -28,7 +28,7 @@ export function HoursLogRow({
       </td>
       <td className="p-3 font-medium text-ink">{hours}</td>
       <td className="p-3 text-ink">{studentLabel}</td>
-      <td className="p-3 text-body">{description ?? "—"}</td>
+      <td className="p-3 text-body">{description ?? "-"}</td>
       <td className="p-3 text-right">
         <form action={formAction}>
           <input type="hidden" name="id" value={id} />

@@ -77,12 +77,12 @@ export default async function ParentSessionsPage() {
                       {s.tutee && `(${gradeLabel(s.tutee.grade)})`}
                     </span>
                   </td>
-                  <td className="p-3">{s.subjectName ?? "—"}</td>
+                  <td className="p-3">{s.subjectName ?? "-"}</td>
                   <td className="p-3 whitespace-nowrap">
                     {WEEKDAY_LABELS[s.day]} {formatTimeRange(s.start_time)}
                   </td>
-                  <td className="p-3">{s.tutor?.display_name ?? "—"}</td>
-                  <td className="p-3 text-body">{s.tutor?.email ?? "—"}</td>
+                  <td className="p-3">{s.tutor?.display_name ?? "-"}</td>
+                  <td className="p-3 text-body">{s.tutor?.email ?? "-"}</td>
                 </tr>
               ))}
             </tbody>

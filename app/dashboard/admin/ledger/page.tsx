@@ -45,13 +45,13 @@ export default async function AdminLedgerPage() {
               return (
                 <tr key={c.id} className="border-b border-border last:border-0">
                   <td className="p-3">
-                    {slot?.tutees ? `${slot.tutees.first_name} (${gradeLabel(slot.tutees.grade)})` : "—"}
+                    {slot?.tutees ? `${slot.tutees.first_name} (${gradeLabel(slot.tutees.grade)})` : "-"}
                   </td>
-                  <td className="p-3">{subject?.name ?? "—"}</td>
+                  <td className="p-3">{subject?.name ?? "-"}</td>
                   <td className="p-3 whitespace-nowrap">
-                    {slot ? `${WEEKDAY_LABELS[slot.day]} ${formatTimeRange(slot.start_time)}` : "—"}
+                    {slot ? `${WEEKDAY_LABELS[slot.day]} ${formatTimeRange(slot.start_time)}` : "-"}
                   </td>
-                  <td className="p-3">{tutor?.display_name ?? "—"}</td>
+                  <td className="p-3">{tutor?.display_name ?? "-"}</td>
                   <td className="p-3">
                     <StatusTrack status={claimToDisplayStatus(c.status)} />
                   </td>
