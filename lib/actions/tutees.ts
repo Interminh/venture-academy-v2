@@ -88,7 +88,7 @@ export async function createTutee(
 
 // Resyncs a tutee's subjects and availability to match the submitted form.
 // Unchecking a slot that has a live (pending or approved) claim now cancels
-// that claim instead of silently keeping the slot around — a parent who
+// that claim instead of silently keeping the slot around. A parent who
 // removes an offered time is telling the tutor it's off the table. Slots
 // are soft-deleted (is_active = false), never hard-deleted, so a cancelled
 // claim's history survives (hard-deleting the slot would cascade-delete it).

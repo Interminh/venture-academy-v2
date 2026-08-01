@@ -1,5 +1,5 @@
 -- Lets a tutor log hours worked: date, hours, who it was for (freeform,
--- not tied to a specific claim — a tutor might log time for a student
+-- not tied to a specific claim. A tutor might log time for a student
 -- whose booking predates this feature, or for something not modeled as a
 -- claim at all), and an optional description. Feeds the admin stats
 -- dashboard's "total hours tutored" figure.

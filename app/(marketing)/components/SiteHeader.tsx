@@ -4,7 +4,7 @@ import { ButtonLink } from "@/components/ui/Button";
 import { createClient } from "@/lib/supabase/server";
 
 // Server component so the marketing header can tell, on first render, if
-// this browser already has a session — a logged-in tutor/parent/admin
+// this browser already has a session. A logged-in tutor/parent/admin
 // landing back on "/" (e.g. via the logo) should see their way back in,
 // not a Log in / Sign up pair that implies they aren't signed in.
 export async function SiteHeader() {

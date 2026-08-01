@@ -2,7 +2,7 @@
 -- a parent currently has no way to read a tutor's profile at all, even
 -- after that tutor's claim on their own tutee is approved. Needed for the
 -- parent-facing "Sessions" page, which surfaces the tutor's name + email
--- once a booking is confirmed — same contact-unlock-on-approval model the
+-- once a booking is confirmed. Same contact-unlock-on-approval model the
 -- tutor side already has, just flipped.
 
 begin;

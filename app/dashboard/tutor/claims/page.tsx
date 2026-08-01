@@ -80,7 +80,7 @@ export default async function MyClaimsPage() {
       <div>
         <h2 className="mb-1 font-heading text-lg font-bold text-ink">Log your hours</h2>
         <p className="mb-4 text-body">
-          Keep a running record of time tutored — {totalHours} hour{totalHours === 1 ? "" : "s"} logged so far.
+          Keep a running record of time tutored. {totalHours} hour{totalHours === 1 ? "" : "s"} logged so far.
         </p>
         <Card className="mb-4 p-4">
           <HoursLogForm />

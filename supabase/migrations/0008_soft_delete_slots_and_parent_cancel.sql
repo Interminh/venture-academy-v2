@@ -2,12 +2,12 @@
 --
 -- 1. Removing an availability slot used to hard-delete the row, which
 --    cascades and destroys every claim ever tied to it (including
---    cancelled/rejected history) — silently breaking the "claims are
+--    cancelled/rejected history). That silently breaks the "claims are
 --    never deleted, full audit trail" invariant the schema otherwise
 --    guarantees. Slots are now soft-deleted via `is_active`, so claim
 --    history always survives, no matter how a slot goes away.
 --
--- 2. A parent had no RLS path to cancel a claim at all — only a tutor
+-- 2. A parent had no RLS path to cancel a claim at all. Only a tutor
 --    (their own, from 'approved') or an admin (any status) could. If a
 --    parent removes a slot that a tutor has a pending/approved claim on,
 --    the app needs to cancel that claim on the parent's behalf so the
@@ -21,7 +21,7 @@ alter table availability_slots add column is_active boolean not null default tru
 alter table availability_slots
   drop constraint availability_slots_tutee_id_day_start_time_key;
 
--- Only one *active* row per (tutee, day, time) — a removed slot can be
+-- Only one *active* row per (tutee, day, time). A removed slot can be
 -- re-added later as a fresh row without colliding with its own history.
 create unique index availability_slots_active_tutee_day_time_key
   on availability_slots (tutee_id, day, start_time)
@@ -50,7 +50,7 @@ grant select, insert, update, delete on availability_slots
   to anon, authenticated, service_role;
 
 -- Lets a parent cancel a live claim tied to one of their own tutee's
--- slots — needed so removing/changing availability can auto-cancel a
+-- slots. Needed so removing/changing availability can auto-cancel a
 -- pending or approved claim instead of either silently keeping it around
 -- or being blocked entirely.
 create policy "claims_update_parent_cancel" on claims

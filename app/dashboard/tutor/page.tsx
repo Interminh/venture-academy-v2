@@ -48,8 +48,8 @@ export default async function TutorBrowsePage({
     maxWeeklySessions: t.max_weekly_sessions,
     // A subject an admin has since deactivated stays attached to the
     // tutee (an existing family's needs aren't erased), but is dropped
-    // here so it can no longer be picked as a subject for a *new* claim —
-    // otherwise "deactivating" a subject wouldn't actually retire it.
+    // here so it can no longer be picked as a subject for a *new* claim.
+    // Otherwise "deactivating" a subject wouldn't actually retire it.
     subjects: (
       t.tutee_subjects as unknown as { subjects: { id: string; name: string; is_active: boolean } | null }[]
     )
