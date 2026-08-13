@@ -34,12 +34,26 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
   const path = request.nextUrl.pathname;
   const isDashboardRoute = path.startsWith("/dashboard");
+
+  // getUser() hits Supabase's auth endpoint on every request this proxy
+  // matches, which is nearly the whole site. A network-level failure
+  // (paused project, unreachable host) throws instead of returning an
+  // error, and an uncaught throw here would crash the proxy itself,
+  // before Next.js ever reaches a page or an error boundary. Failing
+  // open and skipping role-gating lets the request through to the actual
+  // page, where the same Supabase call throws again in a place
+  // app/error.tsx can actually catch and show something useful for.
+  let user: { id: string } | null = null;
+  try {
+    const {
+      data: { user: fetchedUser },
+    } = await supabase.auth.getUser();
+    user = fetchedUser;
+  } catch {
+    return supabaseResponse;
+  }
 
   // Redirects need to carry forward any session cookies that getUser() just
   // refreshed on supabaseResponse. A bare NextResponse.redirect() would
@@ -63,17 +77,21 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (isDashboardRoute && user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
+    try {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .single();
 
-    const role = profile?.role;
-    const roleSection = path.split("/")[2]; // "admin" | "tutor" | "parent" | undefined
+      const role = profile?.role;
+      const roleSection = path.split("/")[2]; // "admin" | "tutor" | "parent" | undefined
 
-    if (role && roleSection && roleSection !== role && ["admin", "tutor", "parent"].includes(roleSection)) {
-      return redirect(role in ROLE_HOME ? ROLE_HOME[role] : "/login");
+      if (role && roleSection && roleSection !== role && ["admin", "tutor", "parent"].includes(roleSection)) {
+        return redirect(role in ROLE_HOME ? ROLE_HOME[role] : "/login");
+      }
+    } catch {
+      return supabaseResponse;
     }
   }
 
