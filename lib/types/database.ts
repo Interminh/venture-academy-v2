@@ -62,6 +62,7 @@ export interface Database {
           grade: number;
           notes: string | null;
           max_weekly_sessions: number | null;
+          is_active: boolean;
           created_at: string;
         };
         Insert: {
@@ -71,6 +72,7 @@ export interface Database {
           grade: number;
           notes?: string | null;
           max_weekly_sessions?: number | null;
+          is_active?: boolean;
           created_at?: string;
         };
         Update: Partial<{
@@ -78,6 +80,7 @@ export interface Database {
           grade: number;
           notes: string | null;
           max_weekly_sessions: number | null;
+          is_active: boolean;
         }>;
         Relationships: [
           {

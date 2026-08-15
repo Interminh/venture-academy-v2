@@ -20,6 +20,7 @@ export default async function EditTuteePage({
         .from("tutees")
         .select("id, first_name, grade, notes, max_weekly_sessions")
         .eq("id", tuteeId)
+        .eq("is_active", true)
         .single(),
       // Joins in the subject even if it's since been deactivated, so a
       // subject the tutee already needs doesn't silently disappear from

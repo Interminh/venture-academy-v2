@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { ButtonLink } from "@/components/ui/Button";
 import { SlotAgenda, type AgendaItem } from "@/components/slots/SlotAgenda";
+import { DeleteTuteeButton } from "@/components/tutees/DeleteTuteeButton";
 import { gradeLabel, toDisplayStatus } from "@/lib/utils/slots";
 
 export default async function ParentDashboardPage() {
@@ -16,6 +17,7 @@ export default async function ParentDashboardPage() {
     .from("tutees")
     .select("id, first_name, grade, notes, max_weekly_sessions")
     .eq("parent_id", user!.id)
+    .eq("is_active", true)
     .order("created_at", { ascending: true });
 
   if (!tutees || tutees.length === 0) {
@@ -82,12 +84,15 @@ export default async function ParentDashboardPage() {
                 </p>
                 {tutee.notes && <p className="mt-1 text-xs text-gray-400">{tutee.notes}</p>}
               </div>
-              <Link
-                href={`/dashboard/parent/tutees/${tutee.id}/edit`}
-                className="text-sm font-medium text-primary hover:underline"
-              >
-                Edit
-              </Link>
+              <div className="flex items-center gap-4">
+                <Link
+                  href={`/dashboard/parent/tutees/${tutee.id}/edit`}
+                  className="text-sm font-medium text-primary hover:underline"
+                >
+                  Edit
+                </Link>
+                <DeleteTuteeButton tuteeId={tutee.id} tuteeName={tutee.first_name} />
+              </div>
             </div>
             <SlotAgenda items={items} emptyMessage="No availability added yet." />
           </Card>

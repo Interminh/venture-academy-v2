@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/Badge";
+import { DeleteTuteeButton } from "@/components/tutees/DeleteTuteeButton";
 import { gradeLabel } from "@/lib/utils/slots";
 import type { SlotStatusValue } from "@/lib/types/database";
 
@@ -8,7 +9,7 @@ export default async function AdminTuteesPage() {
 
   const { data: tutees } = await supabase
     .from("tutees")
-    .select("id, first_name, grade, profiles(display_name, email), tutee_subjects(subjects(name))")
+    .select("id, first_name, grade, is_active, profiles(display_name, email), tutee_subjects(subjects(name))")
     .order("created_at", { ascending: false });
 
   const { data: statuses } = await supabase.from("slot_status").select("tutee_id, status");
@@ -32,6 +33,7 @@ export default async function AdminTuteesPage() {
               <th className="p-3">Parent</th>
               <th className="p-3">Subjects</th>
               <th className="p-3">Slots</th>
+              <th className="p-3"></th>
             </tr>
           </thead>
           <tbody>
@@ -48,6 +50,11 @@ export default async function AdminTuteesPage() {
                 <tr key={t.id} className="border-b border-border last:border-0 align-top">
                   <td className="p-3 font-medium text-ink">
                     {t.first_name} <span className="text-body font-normal">({gradeLabel(t.grade)})</span>
+                    {!t.is_active && (
+                      <Badge tone="neutral" className="ml-2">
+                        Deleted
+                      </Badge>
+                    )}
                   </td>
                   <td className="p-3 text-body">
                     {parent?.display_name}
@@ -69,6 +76,11 @@ export default async function AdminTuteesPage() {
                       <Badge tone="warning">{c.pending} pending</Badge>
                       <Badge tone="info">{c.approved} booked</Badge>
                     </div>
+                  </td>
+                  <td className="p-3">
+                    {t.is_active && (
+                      <DeleteTuteeButton tuteeId={t.id} tuteeName={t.first_name} />
+                    )}
                   </td>
                 </tr>
               );

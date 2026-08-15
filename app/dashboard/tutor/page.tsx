@@ -18,6 +18,7 @@ export default async function TutorBrowsePage({
     supabase
       .from("tutees")
       .select("id, first_name, grade, max_weekly_sessions, tutee_subjects(subjects(id, name, is_active))")
+      .eq("is_active", true)
       .order("first_name"),
   ]);
 

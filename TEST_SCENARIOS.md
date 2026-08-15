@@ -68,8 +68,16 @@ purpose (see `report.txt`), so it isn't confused with a regression.
   badge ever shows for that student.
 - Submitting a non-positive or non-numeric max-weekly-sessions value is
   rejected with a validation message.
-- There is currently no way for a parent to delete a student outright
-  (**known gap**, tracked in `report.txt`).
+- A parent (or an admin, on a family's behalf) can delete a student.
+  Deleting is a soft delete: the student drops out of the parent's list
+  and tutor browsing immediately, but the tutee row and its claim history
+  survive for the admin ledger, same pattern as a removed slot.
+- Deleting a student with a pending or approved claim auto-cancels that
+  claim first, so a tutor never ends up quietly holding a booking for a
+  student that no longer exists.
+- Deleting a student twice, or deleting one that's already gone, fails
+  cleanly with "this student can no longer be removed" rather than a
+  crash.
 
 ---
 

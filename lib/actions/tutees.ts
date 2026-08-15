@@ -8,6 +8,7 @@ import type { Weekday } from "@/lib/types/database";
 
 export interface ActionState {
   error?: string;
+  success?: string;
 }
 
 // Slot checkboxes in the form are named "slot" with value "day|start_time".
@@ -84,6 +85,64 @@ export async function createTutee(
 
   revalidatePath("/dashboard/parent");
   redirect("/dashboard/parent");
+}
+
+// Soft-deletes a student: parent removing their own, or an admin acting on
+// a family's behalf. Any pending or approved claim gets cancelled first, so
+// a tutor never ends up quietly holding a booking for a student that no
+// longer exists. The tutee row itself is never hard-deleted (same reasoning
+// as availability_slots), an admin can still see it and its claim history
+// in the ledger, it just drops out of the parent's and tutor's lists.
+export async function deleteTutee(
+  _prevState: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "You must be logged in." };
+
+  const tuteeId = String(formData.get("tuteeId") ?? "");
+
+  const { data: slots } = await supabase
+    .from("availability_slots")
+    .select("id")
+    .eq("tutee_id", tuteeId)
+    .eq("is_active", true);
+  const slotIds = (slots ?? []).map((s) => s.id);
+
+  if (slotIds.length > 0) {
+    const { data: liveClaims } = await supabase
+      .from("claims")
+      .select("id")
+      .in("slot_id", slotIds)
+      .in("status", ["pending", "approved"]);
+
+    if (liveClaims && liveClaims.length > 0) {
+      await supabase
+        .from("claims")
+        .update({ status: "cancelled", cancelled_by: user.id, cancelled_at: new Date().toISOString() })
+        .in("id", liveClaims.map((c) => c.id));
+    }
+  }
+
+  const { data, error } = await supabase
+    .from("tutees")
+    .update({ is_active: false })
+    .eq("id", tuteeId)
+    .select("id");
+
+  if (error) return { error: error.message };
+  if (!data || data.length === 0) {
+    return { error: "This student can no longer be removed." };
+  }
+
+  revalidatePath("/dashboard/parent");
+  revalidatePath("/dashboard/parent/sessions");
+  revalidatePath("/dashboard/tutor");
+  revalidatePath("/dashboard/admin/tutees");
+  return { success: "Student removed." };
 }
 
 // Resyncs a tutee's subjects and availability to match the submitted form.
