@@ -45,6 +45,37 @@ export async function submitClaim(
     .maybeSingle();
   if (!needsSubject) return { error: "This student doesn't need that subject." };
 
+  // A student's weekly cap counts pending claims too, not just approved
+  // ones, so a pile of pending requests can't quietly add up to more
+  // sessions than the family asked for once a director works through
+  // them. This is a check-then-insert, not a database constraint, so two
+  // tutors claiming different slots on the same near-full student at the
+  // exact same moment could both slip through, same tradeoff the rest of
+  // this action already accepts for a club-sized volume of traffic.
+  const { data: tutee } = await supabase
+    .from("tutees")
+    .select("max_weekly_sessions")
+    .eq("id", slot.tutee_id)
+    .single();
+
+  if (tutee?.max_weekly_sessions != null) {
+    const { data: tuteeSlots } = await supabase
+      .from("availability_slots")
+      .select("id")
+      .eq("tutee_id", slot.tutee_id);
+    const tuteeSlotIds = (tuteeSlots ?? []).map((s) => s.id);
+
+    const { count: liveCount } = await supabase
+      .from("claims")
+      .select("id", { count: "exact", head: true })
+      .in("slot_id", tuteeSlotIds)
+      .in("status", ["pending", "approved"]);
+
+    if ((liveCount ?? 0) >= tutee.max_weekly_sessions) {
+      return { error: "This student has already reached their weekly session limit." };
+    }
+  }
+
   const { error } = await supabase
     .from("claims")
     .insert({ slot_id: slotId, tutor_id: user.id, subject_id: subjectId, status: "pending" });

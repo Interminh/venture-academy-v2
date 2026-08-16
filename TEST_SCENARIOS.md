@@ -60,10 +60,16 @@ purpose (see `report.txt`), so it isn't confused with a regression.
 - Removing and re-adding the same slot preserves the old claim's history
   as a separate, distinct record (slots are soft-deleted, never hard
   deleted, so history is never lost).
-- Max-weekly-sessions is enforced as a UI signal only, not a hard block:
-  a parent or admin can still approve claims past the cap today. **Known
-  bug**: nothing currently stops approvals from exceeding the cap (see
-  `report.txt` — pending requests should be blocked once the cap is hit).
+- Once a student's pending-plus-approved claim count reaches their
+  max-weekly-sessions cap, a tutor can no longer submit a new claim on
+  any of that student's open slots — the slot still shows as open and
+  claimable in the roster (the "Fully booked" badge only reflects
+  approved sessions, not pending ones), but submitting fails with "this
+  student has already reached their weekly session limit."
+- The cap is still not enforced at approval time: an admin approving a
+  claim that was already pending before the cap was reached, or before
+  this check existed, can still push a student over the cap. The block
+  is only on creating new pending claims, not on deciding existing ones.
 - Leaving max-weekly-sessions blank means "no cap," and no "Fully booked"
   badge ever shows for that student.
 - Submitting a non-positive or non-numeric max-weekly-sessions value is
@@ -132,11 +138,10 @@ purpose (see `report.txt`), so it isn't confused with a regression.
 - Admin can promote or demote any user's role (parent/tutor/admin).
 
 **Edge cases**
-- **Known bug**: approving pending claims is not blocked once a
-  student's approved-session count reaches their max-weekly-sessions cap
-  — an admin can currently approve more sessions than the cap allows
-  (see scenario in section 2). Fix direction per `report.txt`: block new
-  pending claims once the cap is reached, rather than blocking approval.
+- New pending claims are blocked once a student hits their cap (see
+  section 2), but approval itself still isn't gated: a claim that was
+  already pending when the cap was reached can still be approved,
+  pushing the student's booked count past the cap.
 - Admin tries to change their own role -> explicitly rejected ("ask
   another admin"), so a lone admin can never lock themselves out.
 - Non-admin (parent or tutor) attempts any admin action directly (role
