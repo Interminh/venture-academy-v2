@@ -7,16 +7,11 @@ Future:
 Test:
 Delete students
 Max student cap
+Change avaiability -> Auto delete sesh
 
 To-Do
 
--What happens if you change weekly avaiability while session is pending or booked (should auto cancel)
--
 
 
 
 
-Tutor front:
-
-
-Admin front:
