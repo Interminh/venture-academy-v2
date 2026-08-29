@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { approveClaim, rejectClaim, type ActionState } from "@/lib/actions/claims";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -26,6 +26,7 @@ export function ClaimApprovalRow({
   startTime: string;
   requestedAt: string;
 }) {
+  const [confirmingReject, setConfirmingReject] = useState(false);
   const [approveState, approveAction, approvePending] = useActionState(approveClaim, initialState);
   const [rejectState, rejectAction, rejectPending] = useActionState(rejectClaim, initialState);
 
@@ -43,20 +44,38 @@ export function ClaimApprovalRow({
         </p>
       </div>
       <div className="flex flex-col items-end gap-1.5">
-        <div className="flex gap-2">
-          <form action={rejectAction}>
+        {confirmingReject ? (
+          <form action={rejectAction} className="flex flex-col items-end gap-1.5">
             <input type="hidden" name="claimId" value={claimId} />
-            <Button type="submit" variant="danger" size="sm" disabled={rejectPending || approvePending}>
+            <p className="text-xs text-body">Reject this claim?</p>
+            <div className="flex gap-2">
+              <Button type="button" variant="ghost" size="sm" onClick={() => setConfirmingReject(false)}>
+                Never mind
+              </Button>
+              <Button type="submit" variant="danger" size="sm" disabled={rejectPending}>
+                {rejectPending ? "Rejecting…" : "Confirm reject"}
+              </Button>
+            </div>
+          </form>
+        ) : (
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="danger"
+              size="sm"
+              disabled={rejectPending || approvePending}
+              onClick={() => setConfirmingReject(true)}
+            >
               Reject
             </Button>
-          </form>
-          <form action={approveAction}>
-            <input type="hidden" name="claimId" value={claimId} />
-            <Button type="submit" size="sm" disabled={rejectPending || approvePending}>
-              Approve
-            </Button>
-          </form>
-        </div>
+            <form action={approveAction}>
+              <input type="hidden" name="claimId" value={claimId} />
+              <Button type="submit" size="sm" disabled={rejectPending || approvePending}>
+                Approve
+              </Button>
+            </form>
+          </div>
+        )}
         {approveState.error && <p className="text-xs text-red-600">{approveState.error}</p>}
         {rejectState.error && <p className="text-xs text-red-600">{rejectState.error}</p>}
       </div>
