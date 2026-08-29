@@ -62,10 +62,15 @@ purpose (see `report.txt`), so it isn't confused with a regression.
   deleted, so history is never lost).
 - Once a student's pending-plus-approved claim count reaches their
   max-weekly-sessions cap, a tutor can no longer submit a new claim on
-  any of that student's open slots — the slot still shows as open and
-  claimable in the roster (the "Fully booked" badge only reflects
-  approved sessions, not pending ones), but submitting fails with "this
-  student has already reached their weekly session limit."
+  any of that student's open slots. The roster reflects this: a student
+  fully booked on approved sessions alone shows a blue "Fully booked"
+  badge, while one that's only hit the cap through pending requests (not
+  yet all approved) shows a yellow "Max sessions pending" badge instead
+  of its open-slot count, on both the roster card and the expanded
+  schedule view. A slot can still individually show as open underneath,
+  the badge is what tells a tutor not to bother claiming it.
+- A student's weekly session cap, when set, shows in the expanded
+  schedule view's subtitle (e.g. "needs Math · max 3 sessions/week").
 - The cap is still not enforced at approval time: an admin approving a
   claim that was already pending before the cap was reached, or before
   this check existed, can still push a student over the cap. The block

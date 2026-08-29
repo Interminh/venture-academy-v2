@@ -37,8 +37,13 @@ export function TutorRosterGrid({ students }: { students: StudentSummary[] }) {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         {students.map((student) => {
           const bookedCount = student.slots.filter((s) => s.status === "booked").length;
+          const liveCount = bookedCount + student.slots.filter((s) => s.status === "pending").length;
           const isFullyBooked =
             student.maxWeeklySessions !== null && bookedCount >= student.maxWeeklySessions;
+          const isMaxPending =
+            !isFullyBooked &&
+            student.maxWeeklySessions !== null &&
+            liveCount >= student.maxWeeklySessions;
           return (
             <StudentCard
               key={student.id}
@@ -47,6 +52,7 @@ export function TutorRosterGrid({ students }: { students: StudentSummary[] }) {
               subjectNames={student.subjects.map((s) => s.name)}
               openCount={student.slots.filter((s) => s.status === "open").length}
               isFullyBooked={isFullyBooked}
+              isMaxPending={isMaxPending}
               isSelected={student.id === selectedId}
               onClick={() => setSelectedId(student.id === selectedId ? null : student.id)}
             />
@@ -56,21 +62,37 @@ export function TutorRosterGrid({ students }: { students: StudentSummary[] }) {
 
       {selected && (
         <Card className="p-6">
-          <div className="mb-5 flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="font-heading text-lg font-bold text-ink">
-                  {selected.firstName}&apos;s schedule
-                </h2>
-                {selected.maxWeeklySessions !== null &&
-                  selected.slots.filter((s) => s.status === "booked").length >=
-                    selected.maxWeeklySessions && <Badge tone="info">Fully booked</Badge>}
+          {(() => {
+            const bookedCount = selected.slots.filter((s) => s.status === "booked").length;
+            const liveCount = bookedCount + selected.slots.filter((s) => s.status === "pending").length;
+            const isFullyBooked =
+              selected.maxWeeklySessions !== null && bookedCount >= selected.maxWeeklySessions;
+            const isMaxPending =
+              !isFullyBooked &&
+              selected.maxWeeklySessions !== null &&
+              liveCount >= selected.maxWeeklySessions;
+            return (
+              <div className="mb-5 flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="font-heading text-lg font-bold text-ink">
+                      {selected.firstName}&apos;s schedule
+                    </h2>
+                    {isFullyBooked ? (
+                      <Badge tone="info">Fully booked</Badge>
+                    ) : (
+                      isMaxPending && <Badge tone="warning">Max sessions pending</Badge>
+                    )}
+                  </div>
+                  <p className="text-sm text-body">
+                    {gradeLabel(selected.grade)} · needs {selected.subjects.map((s) => s.name).join(", ")}
+                    {selected.maxWeeklySessions !== null &&
+                      ` · max ${selected.maxWeeklySessions} session${selected.maxWeeklySessions === 1 ? "" : "s"}/week`}
+                  </p>
+                </div>
               </div>
-              <p className="text-sm text-body">
-                {gradeLabel(selected.grade)} · needs {selected.subjects.map((s) => s.name).join(", ")}
-              </p>
-            </div>
-          </div>
+            );
+          })()}
           <SlotAgenda
             items={selected.slots.map(
               (slot): AgendaItem => ({

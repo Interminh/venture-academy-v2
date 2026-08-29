@@ -9,6 +9,7 @@ export function StudentCard({
   subjectNames,
   openCount,
   isFullyBooked,
+  isMaxPending,
   isSelected,
   onClick,
 }: {
@@ -17,6 +18,7 @@ export function StudentCard({
   subjectNames: string[];
   openCount: number;
   isFullyBooked: boolean;
+  isMaxPending: boolean;
   isSelected: boolean;
   onClick: () => void;
 }) {
@@ -46,6 +48,8 @@ export function StudentCard({
       </div>
       {isFullyBooked ? (
         <Badge tone="info">Fully booked</Badge>
+      ) : isMaxPending ? (
+        <Badge tone="warning">Max sessions pending</Badge>
       ) : (
         <Badge tone={openCount > 0 ? "success" : "neutral"}>
           {openCount > 0 ? `${openCount} open time${openCount === 1 ? "" : "s"}` : "No open times"}
