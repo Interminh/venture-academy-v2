@@ -73,7 +73,7 @@ lib/
   supabase/               Supabase client setup for server, browser, and middleware
   types/database.ts       hand-written types matching the current schema
 supabase/
-  migrations/             schema, in order, 0001 through 0005
+  migrations/             schema, in order, 0001 onward
   dev/                    scripts for local development only, not for production
   seed.sql                starter subject list
 ```
@@ -106,11 +106,96 @@ ID.
 app type-checks without a live project connected. Once you've linked a
 real project, regenerate it with the Supabase CLI (see `SETUP.md`).
 
+## Rate limits
+
+**Supabase Auth.** Signup, login, and password-reset requests are
+throttled by Supabase's own built-in Auth rate limits, not by anything
+in this app's code. The exact numbers live in the Supabase dashboard
+under Authentication → Rate Limits, check there directly rather than
+trusting a number written here, Supabase has changed these defaults
+before and they vary by plan.
+
+**This app adds none of its own.** No Server Action here throttles
+repeated calls, login attempts, claim submissions, or resubmitted forms.
+For a club-sized user base this hasn't mattered in practice, but it's a
+real gap if traffic or abuse ever grows: someone could script repeated
+signups, password-reset requests, or claim attempts with nothing in the
+app itself to slow them down, only whatever Supabase's platform-level
+limits happen to catch.
+
+**Supabase's free-tier project limits.** The project pauses
+automatically after about a week with no API activity (that's what the
+"Be right back" screen is for) and has to be manually resumed from the
+dashboard. The free tier also caps monthly active users, database size,
+and bandwidth, unlikely for a club this size to hit, but worth knowing
+they exist.
+
+**Outbound email, if you add it, is a separate limit entirely,**
+whatever your email provider allows, not Supabase's. A personal Gmail
+account is capped at 500 sent messages per rolling 24 hours (500
+recipients per message too, combining to/cc/bcc), a Google Workspace
+account usually gets 2,000/day. That ceiling is very unlikely to bind at
+this club's scale. The more realistic risk is deliverability: automated
+mail sent through smtp.gmail.com with an app password can get flagged
+by Google's own abuse detection, or land in spam on the receiving end,
+well before you're anywhere near the 500 cap, since that heuristic
+looks at sending patterns, not just volume. A transactional email
+provider (Resend, Postmark) is a more reliable fit for something like
+an automated "your claim was accepted" notice, and keeps a personal
+Gmail password out of server code, but for a low-volume, no-links,
+plain-text courtesy notice, Gmail SMTP is a reasonable place to start.
+
+## Security
+
+- **Row Level Security on every table.** Access control is enforced by
+  Postgres itself, not just by what the UI happens to render. A tutor
+  genuinely cannot query another family's data by guessing an ID; a
+  demoted admin loses admin access on their very next request. This is
+  the single most load-bearing security property of the app, nearly
+  everything else is a convenience layered on top of it.
+- **Role is never trusted from the client.** Every Server Action
+  re-checks who's making the request, and RLS checks it again
+  independently at the database layer, so a tampered request can't
+  grant itself a role or reach a permission the UI doesn't expose.
+- **Tutor codes never leak.** A signup request checks a code's validity
+  through a security-definer function that can confirm a match without
+  ever letting an unauthenticated caller read the codes table or learn
+  how many codes exist.
+- **Passwords are hashed by Supabase**, never visible in plaintext to
+  anyone, including the project owner. There is no "look up a user's
+  password" path, by design.
+- **Password reset is enumeration-safe**, the same message shows
+  whether or not an email has an account. Signup is a deliberate
+  exception: it does say if an email's already taken, so a real user
+  isn't shown a fake "check your email" message for a confirmation that
+  will never arrive. That's a considered tradeoff, not an oversight.
+- **Secrets stay out of the repo.** `.env.local` is gitignored, and the
+  service-role key is only ever read server-side, never sent to the
+  browser.
+- **Errors don't leak internals.** Production error messages from
+  Server Components and Server Actions are redacted by Next.js itself;
+  this app also has its own error boundaries (`app/error.tsx`,
+  `app/global-error.tsx`) so a Supabase outage or an unexpected crash
+  shows a plain-language screen instead of a stack trace.
+
+### Known gaps
+
+- **No multi-factor authentication**, for any role, including admin. An
+  admin account is the highest-value target in this system (subject and
+  tutor-code management, force-cancel, role changes), and it's protected
+  by the same email-and-password as everyone else.
+- **No application-level rate limiting**, as above.
+- **No audit trail for admin actions outside of claims and deleted
+  students.** Claims and soft-deleted students keep a full history (who,
+  when, and in some cases why). Renaming a subject, toggling a tutor
+  code, or changing someone's role does not record who did it or when,
+  beyond whatever timestamp columns that row already has.
+
 ## License
 
 MIT. See [`LICENSE`](./LICENSE).
 
 ## Team
 
-Built and maintained by the Venture Academy Tutors club director *tech-lead* at
+Built and maintained by the Venture Academy Tutors club director & *tech-lead* at
 Interlake High School: Minh Do

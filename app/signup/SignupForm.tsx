@@ -97,8 +97,12 @@ export function SignupForm() {
       <Button type="submit" disabled={pending} className="w-full">
         {pending ? "Creating account…" : "Create account"}
       </Button>
-      <p className="text-center text-xs text-gray-400">
+      <p className="text-center text-sm text-gray-400">
         That&apos;s all we ask for, plus your student&apos;s tutoring needs.
+        Our official VAT email address will also be used to send you
+        update notifications (tutor has been confirmed, request has been
+        accepted), so please check your junk/spam! *Can unsubscribe
+        anytime
       </p>
       <p className="text-center text-sm text-body">
         Already have an account?{" "}
