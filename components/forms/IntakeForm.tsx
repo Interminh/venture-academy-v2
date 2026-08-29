@@ -159,7 +159,7 @@ export function IntakeForm({
           id="notes"
           name="notes"
           rows={3}
-          placeholder="Anything a tutor or director should know: learning style, prior tutors, scheduling constraints, etc."
+          placeholder="Anything a tutor or director should know: learning style, prior tutors, scheduling constraints, subject options, etc."
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
         />
