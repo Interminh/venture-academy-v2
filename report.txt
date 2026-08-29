@@ -1,5 +1,6 @@
 Future:
 Venture academy domain? ventureacademytutors.com
+-How is lag?
 -Contact me?
 -Notifications?
 -Add more subjects?
@@ -10,8 +11,6 @@ Do a full run through
 
 Test:
 
-Max student cap (even when pending not booked)
-Change avaiability -> Auto delete sesh
 
 
 
