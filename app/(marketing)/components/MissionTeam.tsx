@@ -3,9 +3,9 @@ import { Card } from "@/components/ui/Card";
 
 const TEAM = [
   {
-    name: "Violet Ha",
-    role: "Club Director",
-    bio: "Rising senior at Interlake, passionate about media studies. Favorite subject: English.",
+    name: "Divyata Sherawat",
+    role: "Secretary",
+    bio: "Rising senior at Interlake, passionate about dance and education. Favorite subject: physics.",
   },
   {
     name: "Minh Do",
@@ -13,9 +13,9 @@ const TEAM = [
     bio: "Rising junior at Interlake, passionate about coding and tennis. Favorite subject: math.",
   },
   {
-    name: "Saahil Shah",
-    role: "Club Director",
-    bio: "Rising senior at Interlake, passionate about education and poverty alleviation. Favorite subject: chemistry.",
+    name: "Rianna Kumazawa",
+    role: "Outreach Officer",
+    bio: "Rising junior at Interlake, passionate about volleyball and hiking. Favorite subject: math.",
   },
 ];
 
@@ -48,7 +48,7 @@ export function MissionTeam() {
         </div>
 
         <h2 className="mt-16 mb-6 text-center font-heading text-2xl font-bold text-ink">
-          Meet the directors
+          Meet the team
         </h2>
         <div className="grid gap-5 sm:grid-cols-3">
           {TEAM.map((person) => (
