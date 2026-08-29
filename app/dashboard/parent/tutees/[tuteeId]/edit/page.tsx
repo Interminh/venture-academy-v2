@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/Card";
 import { IntakeForm } from "@/components/forms/IntakeForm";
-import type { SlotKey } from "@/components/forms/AvailabilityPicker";
+import type { SlotKey, SlotLiveStatus } from "@/components/forms/AvailabilityPicker";
 import { toHHMM } from "@/lib/utils/slots";
 
 export default async function EditTuteePage({
@@ -42,6 +42,20 @@ export default async function EditTuteePage({
     (slot) => `${slot.day}|${toHHMM(slot.start_time)}` as SlotKey
   );
 
+  // Pending/approved claims on this tutee's own slots, so the picker can
+  // show a parent which times are actually live before they touch them.
+  const { data: statuses } = await supabase
+    .from("slot_status")
+    .select("day, start_time, status")
+    .eq("tutee_id", tuteeId)
+    .in("status", ["pending", "approved"]);
+
+  const slotStatuses: Partial<Record<SlotKey, SlotLiveStatus>> = {};
+  for (const s of statuses ?? []) {
+    const key = `${s.day}|${toHHMM(s.start_time)}` as SlotKey;
+    slotStatuses[key] = s.status === "approved" ? "booked" : "pending";
+  }
+
   const subjectsById = new Map((activeSubjects ?? []).map((s) => [s.id, s]));
   for (const ts of tuteeSubjects ?? []) {
     const subject = ts.subjects as unknown as { id: string; name: string } | null;
@@ -69,6 +83,7 @@ export default async function EditTuteePage({
             maxWeeklySessions: tutee.max_weekly_sessions,
             subjectIds: (tuteeSubjects ?? []).map((s) => s.subject_id),
             slots: slotKeys,
+            slotStatuses,
           }}
         />
       </Card>

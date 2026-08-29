@@ -51,6 +51,13 @@ purpose (see `report.txt`), so it isn't confused with a regression.
   is reflected on the tutor side.
 - Setting a max-weekly-sessions cap shows a "Fully booked" badge to
   tutors once approved claims reach that number.
+- The weekly availability grid on the add/edit form color-codes each
+  checked time by its live status: green means open and unclaimed,
+  yellow means a tutor has a pending claim on it, blue means it's
+  booked, with a key underneath explaining the colors and a note that
+  unchecking a yellow or blue time cancels that claim on save. A new
+  student's grid is always all green, since nothing can be claimed
+  before the student exists.
 
 **Edge cases**
 - Removing a time slot that currently has a pending or approved claim on

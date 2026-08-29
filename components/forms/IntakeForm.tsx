@@ -3,7 +3,7 @@
 import { useActionState, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input, Label, Select, Textarea, FieldError } from "@/components/ui/Input";
-import { AvailabilityPicker, type SlotKey } from "./AvailabilityPicker";
+import { AvailabilityPicker, type SlotKey, type SlotLiveStatus } from "./AvailabilityPicker";
 import { createTutee, updateTutee, type ActionState } from "@/lib/actions/tutees";
 
 const initialState: ActionState = {};
@@ -21,6 +21,7 @@ interface ExistingTutee {
   maxWeeklySessions: number | null;
   subjectIds: string[];
   slots: SlotKey[];
+  slotStatuses?: Partial<Record<SlotKey, SlotLiveStatus>>;
 }
 
 export function IntakeForm({
@@ -164,7 +165,11 @@ export function IntakeForm({
         />
       </div>
 
-      <AvailabilityPicker selected={slots} onToggle={toggleSlot} />
+      <AvailabilityPicker
+        selected={slots}
+        onToggle={toggleSlot}
+        liveStatuses={existing?.slotStatuses}
+      />
 
       <FieldError message={state.error} />
       <Button type="submit" disabled={pending} className="self-start">
