@@ -90,7 +90,11 @@ export function TutorRosterGrid({ students }: { students: StudentSummary[] }) {
                     {selected.maxWeeklySessions !== null &&
                       ` · max ${selected.maxWeeklySessions} session${selected.maxWeeklySessions === 1 ? "" : "s"}/week`}
                   </p>
-                  {selected.notes && <p className="text-sm text-body">{selected.notes}</p>}
+                  {selected.notes && (
+                    <p className="mt-2 text-sm text-body">
+                      <span className="font-semibold">Additional information:</span> {selected.notes}
+                    </p>
+                  )}
                 </div>
               </div>
             );
