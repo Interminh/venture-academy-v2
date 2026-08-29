@@ -52,7 +52,7 @@ export function LoginForm() {
       <p className="text-center text-sm text-body">
         New to VAT?{" "}
         <Link href="/signup" className="font-medium text-primary hover:underline">
-          Create a parent account
+          Create an account
         </Link>
       </p>
     </form>

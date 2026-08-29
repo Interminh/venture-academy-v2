@@ -63,6 +63,7 @@ export interface Database {
           notes: string | null;
           max_weekly_sessions: number | null;
           is_active: boolean;
+          admin_dismissed_at: string | null;
           created_at: string;
         };
         Insert: {
@@ -73,6 +74,7 @@ export interface Database {
           notes?: string | null;
           max_weekly_sessions?: number | null;
           is_active?: boolean;
+          admin_dismissed_at?: string | null;
           created_at?: string;
         };
         Update: Partial<{
@@ -81,6 +83,7 @@ export interface Database {
           notes: string | null;
           max_weekly_sessions: number | null;
           is_active: boolean;
+          admin_dismissed_at: string | null;
         }>;
         Relationships: [
           {
@@ -173,6 +176,7 @@ export interface Database {
           cancelled_at: string | null;
           cancel_reason: string | null;
           tutor_dismissed_at: string | null;
+          admin_dismissed_at: string | null;
         };
         Insert: {
           id?: string;
@@ -187,6 +191,7 @@ export interface Database {
           cancelled_at?: string | null;
           cancel_reason?: string | null;
           tutor_dismissed_at?: string | null;
+          admin_dismissed_at?: string | null;
         };
         Update: Partial<{
           status: ClaimStatus;
@@ -196,6 +201,7 @@ export interface Database {
           cancelled_at: string | null;
           cancel_reason: string | null;
           tutor_dismissed_at: string | null;
+          admin_dismissed_at: string | null;
         }>;
         Relationships: [
           {

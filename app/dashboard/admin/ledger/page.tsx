@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { StatusTrack } from "@/components/slots/StatusTrack";
 import { ForceCancelButton } from "@/components/admin/ForceCancelButton";
+import { DismissLedgerClaimButton } from "@/components/admin/DismissLedgerClaimButton";
 import { RealtimeRefresh } from "@/components/slots/RealtimeRefresh";
 import { formatTimeRange, WEEKDAY_LABELS, gradeLabel, claimToDisplayStatus } from "@/lib/utils/slots";
 
@@ -12,6 +13,7 @@ export default async function AdminLedgerPage() {
     .select(
       "id, status, requested_at, profiles!claims_tutor_id_fkey(display_name), subjects(name), availability_slots(day, start_time, tutees(first_name, grade))"
     )
+    .is("admin_dismissed_at", null)
     .order("requested_at", { ascending: false });
 
   return (
@@ -57,6 +59,9 @@ export default async function AdminLedgerPage() {
                   </td>
                   <td className="p-3 text-right">
                     {c.status === "approved" && <ForceCancelButton claimId={c.id} />}
+                    {(c.status === "cancelled" || c.status === "rejected") && (
+                      <DismissLedgerClaimButton claimId={c.id} />
+                    )}
                   </td>
                 </tr>
               );

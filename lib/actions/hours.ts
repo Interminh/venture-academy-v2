@@ -24,6 +24,7 @@ export async function logHours(
 
   if (!sessionDate) return { error: "Please pick a date." };
   if (!studentLabel) return { error: "Please say who the session was for." };
+  if (!description) return { error: "Please add a description of the session." };
   if (Number.isNaN(hours) || hours <= 0 || hours > 24) {
     return { error: "Hours must be a number between 0 and 24." };
   }
@@ -33,7 +34,7 @@ export async function logHours(
     session_date: sessionDate,
     hours,
     student_label: studentLabel,
-    description: description || null,
+    description,
   });
 
   if (error) return { error: error.message };

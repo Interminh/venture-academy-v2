@@ -3,10 +3,13 @@ Venture academy domain? ventureacademytutors.com
 -Contact me?
 -Notifications?
 -Add more subjects?
+-Write a report on everything we need to know for website (add to readme) that includes things like rate-limits and security features
+Admin Dashboard
+Does it work on Phone Tablet UIUX
 
 Test:
-Delete students
-Max student cap
+
+Max student cap (even when pending not booked)
 Change avaiability -> Auto delete sesh
 When something is deactivated (like a subject) or canceled (like session) have a way to delete it off the screen after
 

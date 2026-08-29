@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/Badge";
 import { DeleteTuteeButton } from "@/components/tutees/DeleteTuteeButton";
+import { DismissTuteeButton } from "@/components/admin/DismissTuteeButton";
 import { gradeLabel } from "@/lib/utils/slots";
 import type { SlotStatusValue } from "@/lib/types/database";
 
@@ -10,6 +11,7 @@ export default async function AdminTuteesPage() {
   const { data: tutees } = await supabase
     .from("tutees")
     .select("id, first_name, grade, is_active, profiles(display_name, email), tutee_subjects(subjects(name))")
+    .or("is_active.eq.true,admin_dismissed_at.is.null")
     .order("created_at", { ascending: false });
 
   const { data: statuses } = await supabase.from("slot_status").select("tutee_id, status");
@@ -78,8 +80,10 @@ export default async function AdminTuteesPage() {
                     </div>
                   </td>
                   <td className="p-3">
-                    {t.is_active && (
+                    {t.is_active ? (
                       <DeleteTuteeButton tuteeId={t.id} tuteeName={t.first_name} />
+                    ) : (
+                      <DismissTuteeButton tuteeId={t.id} />
                     )}
                   </td>
                 </tr>

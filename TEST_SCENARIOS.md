@@ -143,6 +143,12 @@ purpose (see `report.txt`), so it isn't confused with a regression.
 - Admin can force-cancel any booking (pending, approved, or otherwise),
   optionally with a reason, and the slot reopens.
 - Admin can promote or demote any user's role (parent/tutor/admin).
+- Admin can dismiss a cancelled/rejected claim off the ledger, and a
+  deleted student off "All students," once they've been dealt with. Both
+  are visibility-only and shared across every admin account: the
+  underlying data is untouched, and the same claim history stays fully
+  visible in the ledger regardless of whether the student behind it has
+  been dismissed from the students table.
 
 **Edge cases**
 - New pending claims are blocked once a student hits their cap (see
@@ -162,6 +168,9 @@ purpose (see `report.txt`), so it isn't confused with a regression.
   immediately, without affecting tutors who already signed up with it.
 - Renaming a subject or reusing an existing subject/code name -> rejected
   with a specific "already exists" message (unique constraint).
+- Dismissing a claim that's still pending or approved, or a student that
+  hasn't been deleted -> rejected; dismiss only applies to claims already
+  cancelled/rejected and students already soft-deleted.
 
 ---
 

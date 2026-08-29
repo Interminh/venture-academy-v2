@@ -145,6 +145,39 @@ export async function deleteTutee(
   return { success: "Student removed." };
 }
 
+// Clears a deleted student off the admin "All students" table. Visibility
+// only, same pattern as deleteTutee's soft delete and the tutor's dismiss
+// feature: the tutee row stays soft-deleted exactly as it is, and its
+// claim history is untouched in the ledger, this just stops it from
+// rendering in this one table. Shared across every admin account.
+export async function dismissDeletedTutee(
+  _prevState: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "You must be logged in." };
+
+  const tuteeId = String(formData.get("tuteeId") ?? "");
+
+  const { data, error } = await supabase
+    .from("tutees")
+    .update({ admin_dismissed_at: new Date().toISOString() })
+    .eq("id", tuteeId)
+    .eq("is_active", false)
+    .select("id");
+
+  if (error) return { error: error.message };
+  if (!data || data.length === 0) {
+    return { error: "This student can no longer be dismissed." };
+  }
+
+  revalidatePath("/dashboard/admin/tutees");
+  return {};
+}
+
 // Resyncs a tutee's subjects and availability to match the submitted form.
 // Unchecking a slot that has a live (pending or approved) claim now cancels
 // that claim instead of silently keeping the slot around. A parent who

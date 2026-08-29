@@ -202,6 +202,39 @@ export async function rejectClaim(
   return { success: "Claim rejected." };
 }
 
+// Clears a cancelled/rejected claim off the admin ledger view. Visibility
+// only, same as the tutor's dismissClaim: the row and its full history
+// stay exactly as they are, this just stops it from rendering in the
+// ledger table by default. Shared across every admin account, not scoped
+// to whichever director clicked it.
+export async function dismissLedgerClaim(
+  _prevState: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "You must be logged in." };
+
+  const claimId = String(formData.get("claimId") ?? "");
+
+  const { data, error } = await supabase
+    .from("claims")
+    .update({ admin_dismissed_at: new Date().toISOString() })
+    .eq("id", claimId)
+    .in("status", ["cancelled", "rejected"])
+    .select("id");
+
+  if (error) return { error: error.message };
+  if (!data || data.length === 0) {
+    return { error: "This claim can no longer be dismissed." };
+  }
+
+  revalidatePath("/dashboard/admin/ledger");
+  return {};
+}
+
 // Admin force-cancel: same reopen behavior as a tutor self-cancel, but it
 // works from any status and is attributed to the admin, not the tutor.
 export async function forceCancelClaim(
