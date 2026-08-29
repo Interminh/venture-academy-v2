@@ -13,6 +13,16 @@ const CHECKED_STYLES: Record<"open" | SlotLiveStatus, string> = {
   booked: "border-status-booked bg-status-booked",
 };
 
+// A slot that started pending/booked keeps that color as a transparent
+// outline even after being unchecked, a reminder of exactly what's about
+// to be cancelled, rather than fading back to the plain "never claimed"
+// green outline like a slot that was never live to begin with.
+const UNCHECKED_STYLES: Record<"open" | SlotLiveStatus, string> = {
+  open: "border-status-open/30 bg-transparent hover:border-status-open/60",
+  pending: "border-status-pending/50 bg-status-pending/10 hover:border-status-pending/80",
+  booked: "border-status-booked/50 bg-status-booked/10 hover:border-status-booked/80",
+};
+
 // A student's single weekly availability grid: Mon-Fri x half-hour start
 // times. Each checked cell becomes a `slot` form field valued "day|time".
 // Availability isn't tied to a subject. A tutor picks the subject when
@@ -68,7 +78,7 @@ export function AvailabilityPicker({
                           "h-7 w-7 cursor-pointer rounded-md border-2 transition-colors duration-150",
                           isChecked
                             ? CHECKED_STYLES[status ?? "open"]
-                            : "border-status-open/30 bg-transparent hover:border-status-open/60"
+                            : UNCHECKED_STYLES[status ?? "open"]
                         )}
                       >
                         {isChecked && <input type="hidden" name="slot" value={key} />}
