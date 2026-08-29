@@ -1,12 +1,11 @@
 Future:
 Venture academy domain? ventureacademytutors.com
--How is lag?
+
 -Contact me?
 -Notifications?
 -Add more subjects?
 -Write a report on everything we need to know for website (add to readme) that includes things like rate-limits and security features
 Admin Dashboard
-Does it work on Phone Tablet UIUX
 Do a full run through
 
 Test:

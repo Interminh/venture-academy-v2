@@ -155,6 +155,11 @@ purpose (see `report.txt`), so it isn't confused with a regression.
 - Admin can force-cancel any booking (pending, approved, or otherwise),
   optionally with a reason, and the slot reopens.
 - Admin can promote or demote any user's role (parent/tutor/admin).
+- "All students" and the new "All tutors" tab both let an admin expand
+  any row with an arrow to see that person's detail without leaving the
+  page: a student's individual slots (day, time, status, claiming
+  tutor), or a tutor's individual claims (day, time, status, student).
+  Collapsed by default per row, expanding one doesn't affect the others.
 - Admin can dismiss a cancelled/rejected claim on the ledger, and a
   deleted student on "All students," once they've been dealt with. Both
   move into a collapsed "Dismissed" panel on that same page rather than

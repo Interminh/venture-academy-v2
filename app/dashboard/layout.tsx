@@ -11,6 +11,7 @@ const NAV_BY_ROLE: Record<string, { href: string; label: string }[]> = {
     { href: "/dashboard/admin/ledger", label: "Ledger" },
     { href: "/dashboard/admin/subjects", label: "Subjects" },
     { href: "/dashboard/admin/tutees", label: "Students" },
+    { href: "/dashboard/admin/tutors", label: "Tutors" },
     { href: "/dashboard/admin/users", label: "Users" },
     { href: "/dashboard/admin/stats", label: "Stats" },
   ],
