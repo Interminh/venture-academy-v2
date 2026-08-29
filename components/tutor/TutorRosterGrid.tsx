@@ -14,6 +14,7 @@ export interface StudentSummary {
   id: string;
   firstName: string;
   grade: number;
+  notes: string | null;
   maxWeeklySessions: number | null;
   subjects: { id: string; name: string }[];
   slots: { slotId: string; day: Weekday; startTime: string; status: SlotStatus }[];
@@ -89,6 +90,7 @@ export function TutorRosterGrid({ students }: { students: StudentSummary[] }) {
                     {selected.maxWeeklySessions !== null &&
                       ` · max ${selected.maxWeeklySessions} session${selected.maxWeeklySessions === 1 ? "" : "s"}/week`}
                   </p>
+                  {selected.notes && <p className="text-sm text-body">{selected.notes}</p>}
                 </div>
               </div>
             );

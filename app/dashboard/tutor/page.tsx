@@ -17,7 +17,7 @@ export default async function TutorBrowsePage({
     supabase.from("subjects").select("id, name").eq("is_active", true).order("name"),
     supabase
       .from("tutees")
-      .select("id, first_name, grade, max_weekly_sessions, tutee_subjects(subjects(id, name, is_active))")
+      .select("id, first_name, grade, notes, max_weekly_sessions, tutee_subjects(subjects(id, name, is_active))")
       .eq("is_active", true)
       .order("first_name"),
   ]);
@@ -46,6 +46,7 @@ export default async function TutorBrowsePage({
     id: t.id,
     firstName: t.first_name,
     grade: t.grade,
+    notes: t.notes,
     maxWeeklySessions: t.max_weekly_sessions,
     // A subject an admin has since deactivated stays attached to the
     // tutee (an existing family's needs aren't erased), but is dropped
