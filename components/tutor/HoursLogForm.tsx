@@ -28,7 +28,7 @@ export function HoursLogForm() {
       </div>
       <div>
         <Label htmlFor="description">Description</Label>
-        <Textarea id="description" name="description" rows={1} required />
+        <Textarea id="description" name="description" rows={1} placeholder="e.g. subject + summary" required />
       </div>
       <div className="sm:col-span-4">
         <FieldError message={state.error} />

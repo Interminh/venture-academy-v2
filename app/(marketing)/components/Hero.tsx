@@ -15,10 +15,10 @@ export function Hero() {
       </p>
       <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
         <ButtonLink href="/signup" size="md">
-          Sign up your student
+          Sign up
         </ButtonLink>
         <ButtonLink href="/login" variant="secondary" size="md">
-          Tutor log in
+          Log in
         </ButtonLink>
       </div>
     </section>
