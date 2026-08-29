@@ -102,6 +102,10 @@ purpose (see `report.txt`), so it isn't confused with a regression.
   anyone to claim.
 - Tutor can log hours (date, hours, who it was for) independent of
   whether that session traces back to a specific claim.
+- Tutor can dismiss a cancelled or rejected claim off their own "My
+  sessions" list. This only hides it from that tutor's view, the claim
+  and its full history are untouched everywhere else, including the
+  admin ledger.
 
 **Edge cases**
 - Two tutors claim the same open slot at nearly the same moment -> only
@@ -113,6 +117,9 @@ purpose (see `report.txt`), so it isn't confused with a regression.
 - Tutor tries to cancel a claim that isn't theirs, or isn't approved
   (e.g. still pending, or already cancelled/rejected) -> rejected; the
   RLS policy only allows a tutor to cancel their own approved claims.
+- Tutor tries to dismiss a claim that isn't theirs, or is still pending
+  or approved -> rejected; dismissing only applies to their own claims
+  once cancelled or rejected, an active booking can't be hidden this way.
 - Tutor tries to view another tutor's claimed-but-not-yet-approved slot
   details -> not exposed; contact info only unlocks after approval, and
   only for the tutor on that specific claim.

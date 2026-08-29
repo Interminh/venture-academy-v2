@@ -172,6 +172,7 @@ export interface Database {
           cancelled_by: string | null;
           cancelled_at: string | null;
           cancel_reason: string | null;
+          tutor_dismissed_at: string | null;
         };
         Insert: {
           id?: string;
@@ -185,6 +186,7 @@ export interface Database {
           cancelled_by?: string | null;
           cancelled_at?: string | null;
           cancel_reason?: string | null;
+          tutor_dismissed_at?: string | null;
         };
         Update: Partial<{
           status: ClaimStatus;
@@ -193,6 +195,7 @@ export interface Database {
           cancelled_by: string | null;
           cancelled_at: string | null;
           cancel_reason: string | null;
+          tutor_dismissed_at: string | null;
         }>;
         Relationships: [
           {

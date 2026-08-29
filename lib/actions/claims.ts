@@ -92,6 +92,38 @@ export async function submitClaim(
   return { success: "Claim submitted. A director will review it shortly." };
 }
 
+// Clears a cancelled/rejected claim off the tutor's own "My sessions" list.
+// This is a visibility flag, not a delete, the claims_update_tutor_dismiss
+// RLS policy only allows setting tutor_dismissed_at on the tutor's own
+// claim once it's already cancelled or rejected, so nothing about the
+// claim's history changes for the admin ledger.
+export async function dismissClaim(
+  _prevState: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "You must be logged in." };
+
+  const claimId = String(formData.get("claimId") ?? "");
+
+  const { data, error } = await supabase
+    .from("claims")
+    .update({ tutor_dismissed_at: new Date().toISOString() })
+    .eq("id", claimId)
+    .select("id");
+
+  if (error) return { error: error.message };
+  if (!data || data.length === 0) {
+    return { error: "This claim can no longer be dismissed." };
+  }
+
+  revalidatePath("/dashboard/tutor/claims");
+  return {};
+}
+
 // Tutor self-cancel: only allowed on their own approved claim, enforced by
 // the claims_update_tutor_cancel RLS policy. Reopens the slot to open.
 export async function cancelOwnClaim(

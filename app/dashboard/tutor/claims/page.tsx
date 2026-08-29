@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/Card";
 import { SlotAgenda, type AgendaItem } from "@/components/slots/SlotAgenda";
 import { CancelButton } from "@/components/slots/CancelButton";
+import { DismissClaimButton } from "@/components/slots/DismissClaimButton";
 import { RealtimeRefresh } from "@/components/slots/RealtimeRefresh";
 import { HoursLogForm } from "@/components/tutor/HoursLogForm";
 import { HoursLogRow } from "@/components/tutor/HoursLogRow";
@@ -20,6 +21,7 @@ export default async function MyClaimsPage() {
         "id, status, requested_at, subjects(name), availability_slots(id, tutee_id, day, start_time, tutees(first_name, grade))"
       )
       .eq("tutor_id", user!.id)
+      .is("tutor_dismissed_at", null)
       .order("requested_at", { ascending: false }),
     // The view itself only returns rows for tutees this tutor has an
     // approved claim against, not just this filter.
@@ -59,7 +61,12 @@ export default async function MyClaimsPage() {
       subjectName: subject?.name ?? "Subject",
       tuteeLabel,
       status,
-      actions: status === "booked" ? <CancelButton claimId={c.id} /> : undefined,
+      actions:
+        status === "booked" ? (
+          <CancelButton claimId={c.id} />
+        ) : status === "cancelled" || status === "rejected" ? (
+          <DismissClaimButton claimId={c.id} />
+        ) : undefined,
     };
   });
 
