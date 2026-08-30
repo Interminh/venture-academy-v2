@@ -150,6 +150,13 @@ purpose (see `report.txt`), so it isn't confused with a regression.
   reject each one.
 - Approving a claim books the slot and unlocks contact info both ways
   (tutor sees parent email, parent sees tutor email/name).
+- Approving a claim also emails both sides a plain-text notification (the
+  parent hears which tutor is confirmed and when, the tutor hears their
+  request was accepted), each with a "change my notification settings"
+  link that only affects these notifications, not the separate
+  password-reset flow. Sending requires `RESEND_API_KEY` to be set; with
+  it unset, the app logs a warning and skips sending rather than
+  failing the approval itself.
 - Rejecting a claim reopens the slot; the rejected claim stays in history,
   it is not deleted.
 - Admin can force-cancel any booking (pending, approved, or otherwise),
@@ -170,6 +177,15 @@ purpose (see `report.txt`), so it isn't confused with a regression.
   has been dismissed from the students table.
 
 **Edge cases**
+- A parent or tutor who's unsubscribed from notifications gets no
+  "session booked" email on the next approval; the other side (whoever
+  hasn't unsubscribed) still gets theirs independently.
+- The same settings link toggles both directions: visiting it while
+  subscribed offers to unsubscribe, visiting the same link again once
+  already unsubscribed offers to turn notifications back on instead, no
+  separate resubscribe link is ever sent.
+- Visiting the link with a made-up token doesn't error or leak whether
+  a token was ever real, it just says the link isn't valid.
 - New pending claims are blocked once a student hits their cap (see
   section 2), but approval itself still isn't gated: a claim that was
   already pending when the cap was reached can still be approved,

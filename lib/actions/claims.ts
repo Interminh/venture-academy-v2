@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { sendSessionBookedNotifications } from "@/lib/email/notifications";
+import type { Weekday } from "@/lib/types/database";
 
 export interface ActionState {
   error?: string;
@@ -167,12 +169,61 @@ export async function approveClaim(
   if (!user) return { error: "You must be logged in." };
 
   const claimId = String(formData.get("claimId") ?? "");
-  const { error } = await supabase
+  const { data: claim, error } = await supabase
     .from("claims")
     .update({ status: "approved", decided_by: user.id, decided_at: new Date().toISOString() })
-    .eq("id", claimId);
+    .eq("id", claimId)
+    .select(
+      "tutor_id, subjects(name), availability_slots(day, start_time, tutees(first_name, parent_id))"
+    )
+    .single();
 
   if (error) return { error: error.message };
+
+  // Notification emails are a courtesy, not part of the approval itself,
+  // a Resend outage or a missing API key should never undo an approval
+  // that already succeeded.
+  try {
+    const slot = claim?.availability_slots as unknown as {
+      day: Weekday;
+      start_time: string;
+      tutees: { first_name: string; parent_id: string } | null;
+    } | null;
+    const subject = claim?.subjects as unknown as { name: string } | null;
+
+    if (slot?.tutees) {
+      const { data: recipients } = await supabase
+        .from("profiles")
+        .select("id, display_name, email, notifications_enabled, unsubscribe_token")
+        .in("id", [claim.tutor_id, slot.tutees.parent_id]);
+
+      const tutorProfile = recipients?.find((r) => r.id === claim.tutor_id);
+      const parentProfile = recipients?.find((r) => r.id === slot.tutees!.parent_id);
+
+      if (tutorProfile && parentProfile) {
+        await sendSessionBookedNotifications({
+          tutor: {
+            displayName: tutorProfile.display_name,
+            email: tutorProfile.email,
+            notificationsEnabled: tutorProfile.notifications_enabled,
+            unsubscribeToken: tutorProfile.unsubscribe_token,
+          },
+          parent: {
+            displayName: parentProfile.display_name,
+            email: parentProfile.email,
+            notificationsEnabled: parentProfile.notifications_enabled,
+            unsubscribeToken: parentProfile.unsubscribe_token,
+          },
+          studentFirstName: slot.tutees.first_name,
+          subjectName: subject?.name ?? "their subject",
+          day: slot.day,
+          startTime: slot.start_time,
+        });
+      }
+    }
+  } catch (notifyError) {
+    console.error("Failed to send booking notification emails:", notifyError);
+  }
 
   revalidatePath("/dashboard/admin");
   revalidatePath("/dashboard/admin/ledger");

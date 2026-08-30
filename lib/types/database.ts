@@ -19,6 +19,8 @@ export interface Database {
           role: UserRole;
           display_name: string;
           email: string;
+          notifications_enabled: boolean;
+          unsubscribe_token: string;
           created_at: string;
         };
         Insert: {
@@ -26,12 +28,15 @@ export interface Database {
           role?: UserRole;
           display_name: string;
           email: string;
+          notifications_enabled?: boolean;
+          unsubscribe_token?: string;
           created_at?: string;
         };
         Update: Partial<{
           role: UserRole;
           display_name: string;
           email: string;
+          notifications_enabled: boolean;
         }>;
         Relationships: [];
       };
