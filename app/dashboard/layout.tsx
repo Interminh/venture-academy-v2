@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "@/lib/actions/auth";
-import { Button } from "@/components/ui/Button";
+import { Button, ButtonLink } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
 
 const NAV_BY_ROLE: Record<string, { href: string; label: string }[]> = {
@@ -75,6 +75,15 @@ export default async function DashboardLayout({
                 Log out
               </Button>
             </form>
+            <ButtonLink
+              href="https://forms.cloud.microsoft/r/kwvwdwK8sB"
+              variant="ghost"
+              size="sm"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Contact Us
+            </ButtonLink>
           </div>
         </div>
         <nav className="flex items-center gap-1 overflow-x-auto border-t border-border px-4 py-2 sm:hidden">

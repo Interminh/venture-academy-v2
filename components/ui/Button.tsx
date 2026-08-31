@@ -45,16 +45,22 @@ export function ButtonLink({
   size = "md",
   className,
   children,
+  target,
+  rel,
 }: {
   href: string;
   variant?: Variant;
   size?: Size;
   className?: string;
   children: React.ReactNode;
+  target?: string;
+  rel?: string;
 }) {
   return (
     <Link
       href={href}
+      target={target}
+      rel={rel}
       className={cn(BASE, VARIANT_CLASSES[variant], SIZE_CLASSES[size], className)}
     >
       {children}

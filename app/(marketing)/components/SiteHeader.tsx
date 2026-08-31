@@ -44,6 +44,15 @@ export async function SiteHeader() {
               </ButtonLink>
             </>
           )}
+          <ButtonLink
+            href="https://forms.cloud.microsoft/r/kwvwdwK8sB"
+            variant="ghost"
+            size="sm"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Contact Us
+          </ButtonLink>
         </nav>
       </div>
     </header>
