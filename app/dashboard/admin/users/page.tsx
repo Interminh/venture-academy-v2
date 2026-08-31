@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/Card";
 import { TutorCodeForm } from "@/components/admin/TutorCodeForm";
 import { TutorCodeRow } from "@/components/admin/TutorCodeRow";
 import { UserRoleRow } from "@/components/admin/UserRoleRow";
+import { DismissedPanel } from "@/components/admin/DismissedPanel";
 
 export default async function AdminUsersPage() {
   const supabase = await createClient();
@@ -11,9 +12,20 @@ export default async function AdminUsersPage() {
   } = await supabase.auth.getUser();
 
   const [{ data: codes }, { data: profiles }] = await Promise.all([
-    supabase.from("tutor_signup_codes").select("id, code, is_active").order("created_at", { ascending: false }),
-    supabase.from("profiles").select("id, display_name, email, role").order("display_name"),
+    supabase
+      .from("tutor_signup_codes")
+      .select("id, code, is_active, admin_dismissed_at")
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("profiles")
+      .select("id, display_name, email, role, admin_dismissed_at")
+      .order("display_name"),
   ]);
+
+  const visibleCodes = (codes ?? []).filter((c) => !c.admin_dismissed_at);
+  const dismissedCodes = (codes ?? []).filter((c) => c.admin_dismissed_at);
+  const visibleProfiles = (profiles ?? []).filter((p) => !p.admin_dismissed_at);
+  const dismissedProfiles = (profiles ?? []).filter((p) => p.admin_dismissed_at);
 
   return (
     <div className="flex flex-col gap-10">
@@ -28,13 +40,20 @@ export default async function AdminUsersPage() {
           <TutorCodeForm />
         </Card>
         <Card className="max-w-xl p-5">
-          {(codes ?? []).length === 0 && (
+          {visibleCodes.length === 0 && (
             <p className="py-4 text-center text-sm text-body">No codes yet. Add one above.</p>
           )}
-          {(codes ?? []).map((c) => (
+          {visibleCodes.map((c) => (
             <TutorCodeRow key={c.id} id={c.id} code={c.code} isActive={c.is_active} />
           ))}
         </Card>
+        <div className="max-w-xl">
+          <DismissedPanel count={dismissedCodes.length}>
+            {dismissedCodes.map((c) => (
+              <TutorCodeRow key={c.id} id={c.id} code={c.code} isActive={c.is_active} dismissed />
+            ))}
+          </DismissedPanel>
+        </div>
       </div>
 
       <div>
@@ -49,10 +68,11 @@ export default async function AdminUsersPage() {
               <tr className="border-b border-border bg-bg-soft text-xs uppercase tracking-wide text-body">
                 <th className="p-3">Account</th>
                 <th className="p-3">Role</th>
+                <th className="p-3" />
               </tr>
             </thead>
             <tbody>
-              {(profiles ?? []).map((p) => (
+              {visibleProfiles.map((p) => (
                 <UserRoleRow
                   key={p.id}
                   userId={p.id}
@@ -65,6 +85,26 @@ export default async function AdminUsersPage() {
             </tbody>
           </table>
         </div>
+
+        <DismissedPanel count={dismissedProfiles.length}>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[480px] text-left text-sm">
+              <tbody>
+                {dismissedProfiles.map((p) => (
+                  <UserRoleRow
+                    key={p.id}
+                    userId={p.id}
+                    displayName={p.display_name}
+                    email={p.email}
+                    role={p.role}
+                    isSelf={p.id === user!.id}
+                    dismissed
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </DismissedPanel>
       </div>
     </div>
   );

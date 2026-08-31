@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { updateUserRole, type ActionState } from "@/lib/actions/users";
 import { Select } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
+import { DismissAccountButton } from "./DismissAccountButton";
 import type { UserRole } from "@/lib/types/database";
 
 const initialState: ActionState = {};
@@ -14,12 +15,14 @@ export function UserRoleRow({
   email,
   role,
   isSelf,
+  dismissed = false,
 }: {
   userId: string;
   displayName: string;
   email: string;
   role: UserRole;
   isSelf: boolean;
+  dismissed?: boolean;
 }) {
   const [state, formAction, pending] = useActionState(updateUserRole, initialState);
 
@@ -32,7 +35,7 @@ export function UserRoleRow({
         <p className="text-xs text-gray-400">{email}</p>
       </td>
       <td className="p-3">
-        {isSelf ? (
+        {isSelf || dismissed ? (
           <span className="text-sm text-body capitalize">{role}</span>
         ) : (
           <form action={formAction} className="flex items-center gap-2">
@@ -52,6 +55,11 @@ export function UserRoleRow({
           </form>
         )}
       </td>
+      {!dismissed && (
+        <td className="p-3 text-right">
+          {!isSelf && <DismissAccountButton userId={userId} displayName={displayName} />}
+        </td>
+      )}
     </tr>
   );
 }
