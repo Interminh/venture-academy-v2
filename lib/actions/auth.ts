@@ -26,12 +26,16 @@ export async function signUp(
   const password = String(formData.get("password") ?? "");
   const displayName = String(formData.get("displayName") ?? "").trim();
   const tutorCode = String(formData.get("tutorCode") ?? "").trim();
+  const notificationsAcknowledged = formData.get("notificationsAcknowledged") === "on";
 
   if (!email || !password || !displayName) {
     return { error: "Please fill in every field." };
   }
   if (password.length < 8) {
     return { error: "Password must be at least 8 characters." };
+  }
+  if (!notificationsAcknowledged) {
+    return { error: "Please acknowledge the notification email notice before continuing." };
   }
 
   const supabase = await createClient();

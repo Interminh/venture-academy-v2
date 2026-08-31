@@ -17,6 +17,7 @@ export function SignupForm() {
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [tutorCode, setTutorCode] = useState("");
+  const [notificationsAcknowledged, setNotificationsAcknowledged] = useState(false);
 
   if (state.success) {
     return (
@@ -93,17 +94,29 @@ export function SignupForm() {
         </div>
       )}
 
+      <p className="text-center text-sm font-bold text-ink">
+        Our official VAT email address will also be used to send you
+        update notifications (tutor has been confirmed, request has been
+        accepted), so please check your junk/spam! Please add
+        noreply@ventureacademytutors.org to your email whitelist!{" "}
+        <span className="italic">Can unsubscribe anytime</span>
+      </p>
+      <label className="flex cursor-pointer items-start gap-2 text-sm text-body">
+        <input
+          type="checkbox"
+          name="notificationsAcknowledged"
+          checked={notificationsAcknowledged}
+          onChange={(e) => setNotificationsAcknowledged(e.target.checked)}
+          required
+          className="mt-0.5 h-4 w-4 cursor-pointer accent-primary"
+        />
+        I&apos;ve read the above and agree to receive these emails.
+      </label>
+
       <FieldError message={state.error} />
       <Button type="submit" disabled={pending} className="w-full">
         {pending ? "Creating account…" : "Create account"}
       </Button>
-      <p className="text-center text-sm text-gray-400">
-        That&apos;s all we ask for, plus your student&apos;s tutoring needs.
-        Our official VAT email address will also be used to send you
-        update notifications (tutor has been confirmed, request has been
-        accepted), so please check your junk/spam! *Can unsubscribe
-        anytime
-      </p>
       <p className="text-center text-sm text-body">
         Already have an account?{" "}
         <Link href="/login" className="font-medium text-primary hover:underline">
