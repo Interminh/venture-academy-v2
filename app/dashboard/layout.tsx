@@ -50,7 +50,7 @@ export default async function DashboardLayout({
 
   return (
     <div className="flex min-h-screen flex-col bg-bg-soft">
-      <header className="border-b border-border bg-white">
+      <header className="relative border-b border-border bg-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3.5">
           <div className="flex items-center gap-8">
             <Link href="/" className="font-heading text-base font-extrabold text-ink">
@@ -75,17 +75,18 @@ export default async function DashboardLayout({
                 Log out
               </Button>
             </form>
-            <ButtonLink
-              href="https://forms.cloud.microsoft/r/kwvwdwK8sB"
-              variant="ghost"
-              size="sm"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Contact Us
-            </ButtonLink>
           </div>
         </div>
+        <ButtonLink
+          href="https://forms.cloud.microsoft/r/kwvwdwK8sB"
+          variant="ghost"
+          size="sm"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="absolute top-1/2 right-6 -translate-y-1/2"
+        >
+          Contact Us
+        </ButtonLink>
         <nav className="flex items-center gap-1 overflow-x-auto border-t border-border px-4 py-2 sm:hidden">
           {nav.map((item) => (
             <Link

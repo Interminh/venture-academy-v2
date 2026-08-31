@@ -15,7 +15,7 @@ export async function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-white/90 backdrop-blur">
-      <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
+      <div className="relative mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
         <Link href="/" className="flex items-center gap-2.5">
           <Image
             src="/vat-logo.png"
@@ -44,16 +44,17 @@ export async function SiteHeader() {
               </ButtonLink>
             </>
           )}
-          <ButtonLink
-            href="https://forms.cloud.microsoft/r/kwvwdwK8sB"
-            variant="ghost"
-            size="sm"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Contact Us
-          </ButtonLink>
         </nav>
+        <ButtonLink
+          href="https://forms.cloud.microsoft/r/kwvwdwK8sB"
+          variant="ghost"
+          size="sm"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="absolute top-1/2 right-4 -translate-y-1/2"
+        >
+          Contact Us
+        </ButtonLink>
       </div>
     </header>
   );
