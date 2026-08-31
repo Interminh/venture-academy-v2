@@ -6,7 +6,35 @@ Future:
 
 Do a full run through (first good claude prompt then my own prompt)
 
-Test:
+Production Changes:
+
+1. Does pushing code changes affect the database?
+No, never automatically. Code and database schema are two completely separate things in this project's workflow. Deploying to Vercel (pushing to main) only ships code, it never touches Supabase. The only thing that changes your database is manually running a .sql migration file yourself in the Supabase SQL Editor, something you do deliberately, not something that happens as a side effect of a deploy. So a risky code change and a risky schema change are different categories of risk entirely.
+
+2. Backups, does Supabase do it or do you need to?
+Both, honestly. Supabase does include some automatic backups even on free tier, but I don't want to hand you a specific retention number I'm not certain is current, plan details change. Check Supabase dashboard → Project Settings → Database → Backups to see exactly what your plan includes and how far back it goes.
+
+Regardless of what's automatic, take your own manual snapshot right before any real migration, this is standard practice even at companies with excellent automated backups, because "backed up sometime today" isn't the same guarantee as "backed up one minute before I ran this risky thing." Either:
+
+Click "Create backup" in that same Supabase dashboard page, or
+Run supabase db dump from the CLI, takes seconds, costs nothing.
+The good news: every migration in this project so far (0001 through 0015) has been purely additive, new columns, new tables, new policies, nothing has ever dropped or renamed existing data. That's a deliberately low-risk pattern, and it's worth sticking to. The genuinely dangerous migrations are the ones that drop a column, rename something, or add a NOT NULL constraint without a default on a table that already has rows, those can fail outright or destroy data if something's off. Snapshot before any of those specifically.
+
+3. Testing changes without real users seeing them
+Two different things get conflated here, code changes and database changes, and they need different answers:
+
+For code changes, you already have this for free: npm run dev runs entirely on your own machine at localhost:3000. Nobody else can see it. Push to a git branch instead of main, and Vercel automatically builds a Preview Deployment at a unique, unguessable URL (not linked anywhere, not discoverable), which you can share with just yourself or a tester before merging to main (which is what actually updates the real production URL).
+
+For database changes, this is the real gap right now: your local dev server and your Preview Deployments are both currently pointed at the same live Supabase project real families use (per your .env.local). So testing a schema change "locally" still means running it against the real database, there's no actual separation today.
+
+The fix: create a second, free Supabase project as a dev/staging environment.
+
+Spin up a new Supabase project (free tier, no cost).
+Run all 15 migrations on it, same SQL files, same order, giving you an identical but empty schema.
+Point your local .env.local at this dev project instead of production.
+Optionally, in Vercel's environment variables, scope a second set of Supabase credentials to the "Preview" environment specifically (Vercel lets you set different values per Production/Preview/Development), so even your shared preview links test against the dev database, not real family data.
+Now you can add test students, break things, run half-finished migrations, whatever, with zero risk to anyone real.
+That's the actual industry-standard setup (dev database + staging deploys + production), and it's a genuinely worthwhile thing to do now, before real families are relying on this daily, rather than after. Want me to walk through setting up that second Supabase project and wiring the env vars, or draft the exact steps as a checklist first?
 
 
 
