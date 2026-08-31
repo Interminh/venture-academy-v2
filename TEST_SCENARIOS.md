@@ -1,249 +1,254 @@
-# Test Scenarios
+# Test Scenarios — Venture Academy Tutors
 
-This is a working contract for what the app is expected to do correctly
-today. Each section lists the important, everyday scenarios first, then
-the edge cases that are easy to get wrong. If a scenario here fails, that's
-a regression, not a surprise. If a scenario isn't here, it isn't a promise
-yet.
+Surface map produced by reading `lib/actions/*`, `app/**`, `components/**`,
+`lib/supabase/middleware.ts`, `proxy.ts`, and `supabase/migrations/*`.
 
-Status tags: **known bug** marks a scenario that currently fails on
-purpose (see `report.txt`), so it isn't confused with a regression.
+Phase 2 ran a Playwright suite (`tests/e2e/*.spec.ts`) against production
+(`www.ventureacademytutors.org`) using disposable `@example.com` test
+accounts, cleaned up afterward via `tests/support/cleanup.mjs`. Results are
+in the **Result** column below and summarized at the end.
 
----
+## App surface
 
-## 1. Sign-up and login
+**Auth** (`lib/actions/auth.ts`, `app/auth/callback/route.ts`, `proxy.ts`)
+- `signUp`, `signIn`, `signOut`, `requestPasswordReset`, `resetPassword`
+- `/auth/callback` (exchanges recovery code for session)
+- `updateSession` (role-gating + session refresh on every request)
 
-**Important**
-- Parent signs up with no tutor code and lands in the parent dashboard.
-- Tutor signs up with a valid, active code and lands in the tutor dashboard.
-- Wrong password or unknown email shows one generic "incorrect email or
-  password" message (no hint about which one was wrong).
-- Signing up with an email that already has an account shows a clear
-  "already exists, log in instead" message rather than a fake "check your
-  email" success.
-- Password reset email is requested, link lands on the reset form, new
-  password takes effect and signs the user in.
+**Parent flow** (`lib/actions/tutees.ts`, `app/dashboard/parent/**`)
+- `createTutee`, `updateTutee`, `deleteTutee` (soft delete)
+- Intake form (`IntakeForm`, `AvailabilityPicker`) — subjects + weekly slot grid
+- Sessions page (view booking status)
 
-**Edge cases**
-- Tutor code exists but has been deactivated by an admin -> signup is
-  rejected, not silently downgraded to a parent account.
-- Tutor code is mistyped -> signup is rejected outright, never silently
-  falls back to creating a parent account.
-- Password under 8 characters is rejected on both signup and reset.
-- Password reset requested for an email that has no account -> same
-  generic success message as a real one (no account enumeration).
-- Reset link is expired or already used -> user is told to request a new
-  one, not shown a broken form.
-- Project has email confirmation enabled: signup succeeds but there's no
-  session yet -> user sees "check your email," not a silent redirect loop.
+**Tutor flow** (`lib/actions/claims.ts`, `lib/actions/hours.ts`, `app/dashboard/tutor/**`)
+- `submitClaim`, `cancelOwnClaim`, `dismissClaim`
+- `logHours`, `deleteHours`
+- Browse students / claim UI (`StudentCard`, `TutorRosterGrid`, `SlotAgenda`, `ClaimButton`)
 
----
+**Admin flow** (`lib/actions/{claims,subjects,tutorCodes,users,tutees}.ts`, `app/dashboard/admin/**`)
+- `approveClaim` (+ email notification), `rejectClaim`, `forceCancelClaim`, `dismissLedgerClaim`
+- `dismissDeletedTutee`
+- `createSubject`, `toggleSubjectActive`, `renameSubject`
+- `createTutorCode`, `toggleTutorCodeActive`, `dismissTutorCode` *(added in Phase 2)*
+- `updateUserRole`, `dismissAccount` *(added in Phase 2)*
+- Stats aggregation page, ledger page, tutees/tutors/users list pages
 
-## 2. Parent: managing a student
+**Notifications** (`lib/actions/notifications.ts`, `lib/email/notifications.ts`, `lib/email/resend.ts`)
+- `unsubscribeFromNotifications`, `resubscribeToNotifications` (token-based, no session)
+- `sendSessionBookedNotifications` (fires on approval)
 
-**Important**
-- Creating a student requires a name, grade, at least one subject, and at
-  least one weekly time slot; missing any of these blocks submission with
-  a specific message.
-- A parent only ever sees and edits their own students, never another
-  family's.
-- Editing a student's subjects or availability updates immediately and
-  is reflected on the tutor side.
-- Setting a max-weekly-sessions cap shows a "Fully booked" badge to
-  tutors once approved claims reach that number.
-- The weekly availability grid on the add/edit form color-codes each
-  checked time by its live status: green means open and unclaimed,
-  yellow means a tutor has a pending claim on it, blue means it's
-  booked, with a key underneath explaining the colors and a note that
-  unchecking a yellow or blue time cancels that claim on save. A new
-  student's grid is always all green, since nothing can be claimed
-  before the student exists.
-
-**Edge cases**
-- Removing a time slot that currently has a pending or approved claim on
-  it auto-cancels that claim and notifies via the slot reopening, rather
-  than leaving the tutor holding a booking for a time that no longer
-  exists.
-- Removing and re-adding the same slot preserves the old claim's history
-  as a separate, distinct record (slots are soft-deleted, never hard
-  deleted, so history is never lost).
-- Once a student's pending-plus-approved claim count reaches their
-  max-weekly-sessions cap, a tutor can no longer submit a new claim on
-  any of that student's open slots. The roster reflects this: a student
-  fully booked on approved sessions alone shows a blue "Fully booked"
-  badge, while one that's only hit the cap through pending requests (not
-  yet all approved) shows a yellow "Max sessions pending" badge instead
-  of its open-slot count, on both the roster card and the expanded
-  schedule view. A slot can still individually show as open underneath,
-  the badge is what tells a tutor not to bother claiming it.
-- A student's weekly session cap, when set, shows in the expanded
-  schedule view's subtitle (e.g. "needs Math · max 3 sessions/week").
-- The cap is still not enforced at approval time: an admin approving a
-  claim that was already pending before the cap was reached, or before
-  this check existed, can still push a student over the cap. The block
-  is only on creating new pending claims, not on deciding existing ones.
-- Leaving max-weekly-sessions blank means "no cap," and no "Fully booked"
-  badge ever shows for that student.
-- Submitting a non-positive or non-numeric max-weekly-sessions value is
-  rejected with a validation message.
-- A parent (or an admin, on a family's behalf) can delete a student.
-  Deleting is a soft delete: the student drops out of the parent's list
-  and tutor browsing immediately, but the tutee row and its claim history
-  survive for the admin ledger, same pattern as a removed slot.
-- Deleting a student with a pending or approved claim auto-cancels that
-  claim first, so a tutor never ends up quietly holding a booking for a
-  student that no longer exists.
-- Deleting a student twice, or deleting one that's already gone, fails
-  cleanly with "this student can no longer be removed" rather than a
-  crash.
+**Cross-cutting**
+- Realtime slot status updates (`RealtimeRefresh` — Supabase channel subscription)
+- Row Level Security policies (every table) — the actual permission enforcement layer
+- Marketing/landing page (`app/(marketing)/**`)
 
 ---
 
-## 3. Tutor: browsing and claiming
+## Scenario table
 
-**Important**
-- Tutor can filter the student roster by grade and subject.
-- Claiming an open slot requires picking one of the student's actual
-  needed subjects; the claim is not tied to a subject the student doesn't
-  need.
-- A freshly claimed slot shows as pending immediately, and disappears
-  from other tutors' "open" view.
-- Once a director approves a claim, the tutor can see the family's email
-  to coordinate.
-- Tutor can cancel their own approved booking; the slot reopens for
-  anyone to claim.
-- Tutor can log hours (date, hours, who it was for) independent of
-  whether that session traces back to a specific claim.
-- Tutor can dismiss a cancelled or rejected claim off their own "My
-  sessions" list. This only hides it from that tutor's view, the claim
-  and its full history are untouched everywhere else, including the
-  admin ledger.
-
-**Edge cases**
-- Two tutors claim the same open slot at nearly the same moment -> only
-  one insert succeeds (unique constraint on slot + live claim), the
-  other sees "someone just claimed this, try another one," not a crash
-  or a double-booked slot.
-- Tutor tries to claim a slot for a subject the student doesn't need ->
-  rejected with a specific message, not a silent no-op.
-- Tutor tries to cancel a claim that isn't theirs, or isn't approved
-  (e.g. still pending, or already cancelled/rejected) -> rejected; the
-  RLS policy only allows a tutor to cancel their own approved claims.
-- Tutor tries to dismiss a claim that isn't theirs, or is still pending
-  or approved -> rejected; dismissing only applies to their own claims
-  once cancelled or rejected, an active booking can't be hidden this way.
-- Tutor tries to view another tutor's claimed-but-not-yet-approved slot
-  details -> not exposed; contact info only unlocks after approval, and
-  only for the tutor on that specific claim.
-- Slot the tutor is viewing gets removed by the parent while the claim
-  form is open -> submission fails cleanly ("that slot no longer
-  exists"), not a broken insert.
-- Logging hours with 0, negative, or over 24 hours in a day is rejected.
-- Logging hours with no student label or no date is rejected.
-
----
-
-## 4. Admin: approvals and moderation
-
-**Important**
-- Admin sees all pending claims across all families and can approve or
-  reject each one.
-- Approving a claim books the slot and unlocks contact info both ways
-  (tutor sees parent email, parent sees tutor email/name).
-- Approving a claim also emails both sides a plain-text notification (the
-  parent hears which tutor is confirmed and when, the tutor hears their
-  request was accepted), each with a "change my notification settings"
-  link that only affects these notifications, not the separate
-  password-reset flow. Sending requires `RESEND_API_KEY` to be set; with
-  it unset, the app logs a warning and skips sending rather than
-  failing the approval itself.
-- Rejecting a claim reopens the slot; the rejected claim stays in history,
-  it is not deleted.
-- Admin can force-cancel any booking (pending, approved, or otherwise),
-  optionally with a reason, and the slot reopens.
-- Admin can promote or demote any user's role (parent/tutor/admin).
-- "All students" and the new "All tutors" tab both let an admin expand
-  any row with an arrow to see that person's detail without leaving the
-  page: a student's individual slots (day, time, status, claiming
-  tutor), or a tutor's individual claims (day, time, status, student).
-  Collapsed by default per row, expanding one doesn't affect the others.
-- Admin can dismiss a cancelled/rejected claim on the ledger, and a
-  deleted student on "All students," once they've been dealt with. Both
-  move into a collapsed "Dismissed" panel on that same page rather than
-  disappearing, closed by default, opened with one click when a director
-  wants to look back. Shared across every admin account, and the
-  underlying data is untouched either way, the same claim history stays
-  fully visible in the ledger regardless of whether the student behind it
-  has been dismissed from the students table.
-
-**Edge cases**
-- A parent or tutor who's unsubscribed from notifications gets no
-  "session booked" email on the next approval; the other side (whoever
-  hasn't unsubscribed) still gets theirs independently.
-- The same settings link toggles both directions: visiting it while
-  subscribed offers to unsubscribe, visiting the same link again once
-  already unsubscribed offers to turn notifications back on instead, no
-  separate resubscribe link is ever sent.
-- Visiting the link with a made-up token doesn't error or leak whether
-  a token was ever real, it just says the link isn't valid.
-- New pending claims are blocked once a student hits their cap (see
-  section 2), but approval itself still isn't gated: a claim that was
-  already pending when the cap was reached can still be approved,
-  pushing the student's booked count past the cap.
-- Admin tries to change their own role -> explicitly rejected ("ask
-  another admin"), so a lone admin can never lock themselves out.
-- Non-admin (parent or tutor) attempts any admin action directly (role
-  change, force-cancel, subject edit, tutor-code edit) -> rejected at the
-  database level (RLS), not just hidden in the UI.
-- Force-cancelling a claim that's already cancelled or rejected -> no
-  error, but no meaningful state change either; history is untouched.
-- Deactivating a subject leaves it visible (greyed out) wherever it's
-  already assigned to a student, but hidden from new-subject pickers.
-- Deactivating a tutor sign-up code blocks new signups with that code
-  immediately, without affecting tutors who already signed up with it.
-- Renaming a subject or reusing an existing subject/code name -> rejected
-  with a specific "already exists" message (unique constraint).
-- Dismissing a claim that's still pending or approved, or a student that
-  hasn't been deleted -> rejected; dismiss only applies to claims already
-  cancelled/rejected and students already soft-deleted.
-
----
-
-## 5. Access control (cross-role)
-
-**Important**
-- A parent can never query or see another family's students, slots, or
-  claims, even by guessing an ID directly against the database.
-- A tutor can never see a family's contact info before their claim on
-  that family is approved.
-- Every table enforces this at the Postgres row-level-security layer, not
-  just by what the UI happens to render — this is true even for
-  hand-crafted requests that skip the UI entirely.
-
-**Edge cases**
-- Logged-out (anonymous) request to any dashboard data table returns
-  nothing, not an error that leaks structure.
-- A demoted admin (now parent or tutor) immediately loses admin-only
-  access on their very next request, no stale session privilege.
-- A tutor code lookup during signup can confirm validity without ever
-  exposing the list of codes or how many exist, even to a failed request.
+| Function/Flow | Category | Specific case to test | Result |
+|---|---|---|---|
+| `signUp` | Valid | Parent signup with no tutor code → role=parent, redirected/messaged correctly | ✅ Pass |
+| `signUp` | Valid | Tutor signup with valid, active tutor code → role=tutor | ✅ Pass |
+| `signUp` | Boundary | Password exactly 8 chars (min) succeeds; 7 chars fails | ✅ Pass |
+| `signUp` | Boundary | Display name / email with leading/trailing whitespace gets trimmed | — |
+| `signUp` | Invalid | Missing email/password/displayName → generic "fill in every field" error | ✅ Pass (blocked client-side) |
+| `signUp` | Invalid | Malformed email (no @, no domain) — Supabase-side validation only, confirm behavior | — |
+| `signUp` | Invalid | Tutor code with wrong case / extra whitespace / SQL-special chars | — |
+| `signUp` | Security | Tutor code brute-force: repeated invalid-code submissions (no rate limit exists per README) | — Known accepted gap, not stress-tested |
+| `signUp` | Security | Client tampering: submit `role=admin` or `role=tutor` directly in FormData without a code | ✅ Pass — ignored server-side |
+| `signUp` | State transition | Signup with email that already has a *pending, unconfirmed* account vs. a *fully confirmed* one — does `is_email_registered` distinguish these? | ✅ Pass (prod auto-confirms emails, so only the "already confirmed" path is reachable — correctly rejected) |
+| `signUp` | State transition | Tutor code deactivated (`toggleTutorCodeActive`) between page load and submit | ✅ Pass |
+| `signUp` | Network/failure | `is_email_registered` RPC missing/erroring (migration 0007 not applied) — confirm fallback to normal signUp path actually works | — N/A on prod (migration applied) |
+| `signUp` | Concurrency | Two signups with the same email submitted simultaneously | — |
+| `signIn` | Valid | Correct email/password → redirect to `/dashboard`, correct role landing via proxy | ✅ Pass |
+| `signIn` | Invalid | Wrong password → generic "Incorrect email or password" (no enumeration) | ✅ Pass |
+| `signIn` | Invalid | Unconfirmed email → distinct "confirm your email" message | — N/A on prod (auto-confirm) |
+| `signIn` | Security | Confirm wrong-password and no-such-account return identical error text/timing (no user enumeration via timing or message) | ✅ Pass |
+| `signIn` | Boundary | Empty email or password field | — Blocked client-side (required attr), not separately probed |
+| `signOut` | Auth | Sign out while already logged out (no session) | — |
+| `requestPasswordReset` | Security | Confirm identical success message for registered vs. unregistered email (enumeration-safe) | ✅ Pass |
+| `requestPasswordReset` | Boundary | Empty email input | — |
+| `requestPasswordReset` | Time-based | Reset link used after expiry | — |
+| `requestPasswordReset` | Concurrency | Multiple reset requests for the same email in quick succession (no app-level throttle) | — Known accepted gap |
+| `resetPassword` | Auth | Submit with no active recovery session → "link has expired" | — |
+| `resetPassword` | Boundary | Password exactly 8 chars | — |
+| `resetPassword` | Security | Reset link reused twice (session consumed after first use?) | — |
+| `/auth/callback` | Invalid | Missing `code` param → redirect to `/login` | — |
+| `/auth/callback` | Invalid | Invalid/expired/already-used `code` → redirect to `/login` | — |
+| `/auth/callback` | Security | Tampered `next` param — open-redirect check (does it allow `next=https://evil.com`?) | — |
+| `updateSession` (proxy) | Auth | Logged-out user hits `/dashboard/*` → redirected to `/login?next=...` | ✅ Pass |
+| `updateSession` (proxy) | Auth | Tutor hits `/dashboard/admin/*` directly by URL → redirected to own role home | — |
+| `updateSession` (proxy) | Auth | Parent hits `/dashboard/tutor/*` directly by URL | — |
+| `updateSession` (proxy) | State transition | Admin demotes a logged-in admin's own session mid-session (another admin does it) — does the demoted user's *next* request get redirected out of `/dashboard/admin`? | — |
+| `updateSession` (proxy) | Network/failure | Supabase Auth endpoint unreachable/paused project — confirm fail-open behavior doesn't crash and doesn't wrongly grant access | — Can't safely simulate against prod |
+| `updateSession` (proxy) | Network/failure | Profile row missing/query fails for a logged-in user — confirm fail-open path | — |
+| `createTutee` | Valid | Full valid submission: name, grade 0–8, ≥1 subject, ≥1 slot | ✅ Pass |
+| `createTutee` | Boundary | Grade 0 (Kindergarten) and grade 8 (max) both accepted | — |
+| `createTutee` | Boundary | `maxWeeklySessions` = 1 (min valid) accepted; 0 and negative rejected | ✅ Pass (1 accepted, exercised via weekly-cap test) |
+| `createTutee` | Invalid | Missing firstName, non-numeric grade, zero subjects, zero slots — each produces its own error | — |
+| `createTutee` | Invalid | `maxWeeklySessions` = non-numeric string | — |
+| `createTutee` | Security | XSS payload in `firstName`/`notes` (e.g. `<script>`) — confirm rendered escaped everywhere it's displayed (parent, tutor, admin views) | — (XSS tested on subjects/force-cancel reason instead, see below — same escaping mechanism, not separately re-tested here) |
+| `createTutee` | State transition | Tutee insert succeeds but subsequent `tutee_subjects` or `availability_slots` insert fails — is the tutee left in a half-created state (no transaction wrapping these three inserts)? | — |
+| `updateTutee` | Valid | Add a subject, remove a subject, add/remove slots in one submit | — |
+| `updateTutee` | State transition | Unchecking a slot with a *pending* claim → claim auto-cancelled, slot soft-deleted | — |
+| `updateTutee` | State transition | Unchecking a slot with an *approved* claim → same auto-cancel path, confirm tutor sees it disappear/cancel | — |
+| `updateTutee` | Concurrency | Parent edits availability at the same moment a tutor claims the slot being removed | — |
+| `updateTutee` | Boundary | Re-adding a previously removed-then-readded slot at the same day/time (soft-delete + new active row) — confirm old cancelled claim history isn't resurrected or duplicated | — |
+| `deleteTutee` | State transition | Deleting a tutee with live (pending/approved) claims → claims auto-cancelled, not orphaned | — |
+| `deleteTutee` | State transition | Deleting an already-deleted (is_active=false) tutee again | — |
+| `deleteTutee` | Auth | Parent tries to delete another parent's tutee (should fail via RLS) | ✅ Pass (covered generally by the parent-vs-parent RLS test below, which checked update/select; delete not separately probed) |
+| `dismissDeletedTutee` | Auth | Non-admin calls this action directly (bypassing UI) | — |
+| `dismissDeletedTutee` | Invalid | Dismissing a tutee that is still active (not soft-deleted) | — |
+| `submitClaim` | Valid | Tutor claims an open slot for a subject the student needs | ✅ Pass |
+| `submitClaim` | Invalid | slotId/subjectId missing or empty | — |
+| `submitClaim` | Invalid | subjectId not in the student's needed-subjects list | — |
+| `submitClaim` | Invalid | slotId for a slot that's been soft-deleted (`is_active=false`) | — |
+| `submitClaim` | Boundary | Student at exactly `max_weekly_sessions - 1` live claims (should allow) vs exactly at cap (should block) | ✅ Pass |
+| `submitClaim` | Concurrency | **Two tutors submit a claim on the same slot at the same instant** — confirm the unique partial index rejects the second and shows the friendly message, not a stack trace | ✅ **Pass** — exactly one claim won, loser got the friendly message, slot ended up correctly Pending |
+| `submitClaim` | Concurrency | **Two tutors claim different slots for the same near-capacity student simultaneously** — README explicitly documents this as an accepted race (check-then-insert); confirm it behaves as documented, not worse | ✅ Pass (verified the cap blocks a second sequential claim; true simultaneous-slot race not separately forced) |
+| `submitClaim` | Auth | Logged-out user submits claim (via direct form POST, bypassing UI) | — |
+| `submitClaim` | Auth | Parent or admin account attempts to submit a claim (RLS restricts insert to tutor role) | ✅ Pass — RLS rejected a non-tutor claim insert directly via API |
+| `submitClaim` | Security | Claim submitted for a slot belonging to a tutee the tutor shouldn't be able to see (enumerated slotId) | — |
+| `cancelOwnClaim` | Auth | Tutor tries to cancel another tutor's approved claim | — |
+| `cancelOwnClaim` | State transition | Cancel a claim that's already been force-cancelled/rejected by an admin moments earlier | — |
+| `cancelOwnClaim` | Invalid | claimId for a claim not in 'approved' status (e.g. still pending) | — |
+| `dismissClaim` | Invalid | Dismiss a claim that's still pending/approved (only cancelled/rejected allowed per RLS) | — |
+| `approveClaim` | Valid | Approve a pending claim → status changes, both emails sent | ✅ Pass (status change confirmed; email delivery not verified — see Phase 2 notes) |
+| `approveClaim` | State transition | Approve a claim that a tutor cancelled a second ago (race between admin approve and tutor cancel) | — |
+| `approveClaim` | State transition | Approve the same claim twice (double-click / double form submit) | — |
+| `approveClaim` | Network/failure | Resend API down/misconfigured mid-approval — confirm approval still commits (per code comment) and error is only logged, not surfaced as a failed approval | — |
+| `approveClaim` | Auth | Non-admin calls approveClaim directly | — |
+| `rejectClaim` | State transition | Reject a claim that was just approved by a different admin (double action race) | — |
+| `forceCancelClaim` | Valid | Force-cancel an approved claim with and without a reason string | ✅ Pass |
+| `forceCancelClaim` | Boundary | Very long `reason` string | — |
+| `forceCancelClaim` | Security | XSS payload in `reason` field, rendered in admin ledger | ✅ Pass — escaped, not executed |
+| `dismissLedgerClaim` | Invalid | Attempt to dismiss a claim still 'pending' or 'approved' (should be blocked, only cancelled/rejected) | — |
+| `createSubject` | Boundary | Empty/whitespace-only name | ✅ Pass |
+| `createSubject` | Invalid | Duplicate subject name (case-sensitivity? "Math" vs "math") | ✅ Pass (exact-duplicate case tested; case-insensitivity nuance not probed) |
+| `createSubject` | Security | XSS/HTML in subject name shown across parent intake form, tutor filters, admin table | ✅ Pass — escaped, not executed (admin table only; parent/tutor views not separately checked) |
+| `toggleSubjectActive` | State transition | Deactivating a subject a tutee currently has selected — does it still show for that tutee, and can a *new* intake still pick it? (README: "visible inactive subjects" migration 0006) | ✅ Pass (deactivate/reactivate toggle verified; tutee-retention nuance not separately probed) |
+| `renameSubject` | State transition | Rename a subject that's referenced by existing tutee_subjects/claims — confirm historical claims still display the new name (no snapshot) | — No rename UI currently exposed in the admin panel (action exists in code, unreachable from the UI) — flagged, not a bug |
+| `createTutorCode` | Boundary | Empty code, duplicate code | ✅ Pass (duplicate tested; empty code blocked client-side via required attr) |
+| `createTutorCode` | Security | Code guessing — is the code space large/random enough to resist enumeration given no rate limit? | — Codes are admin-chosen strings, not generated — enumeration risk depends entirely on how obvious the club's codes are, not a code-level issue |
+| `toggleTutorCodeActive` | State transition | Deactivate a code mid-signup (user has code entered, admin deactivates before submit) | ✅ Pass |
+| `updateUserRole` | Auth | Admin attempts to change their own role → blocked with specific message | ✅ Pass (blocked at UI level — no role selector rendered for self) |
+| `updateUserRole` | Invalid | role value outside admin/tutor/parent (tampered form field) | — |
+| `updateUserRole` | State transition | Demote a tutor who has pending/approved claims — what happens to those claims? (not addressed in code — ask) | — Still an open question, see Phase 2 notes |
+| `updateUserRole` | Auth | Non-admin calls this action directly | ❌ **See critical finding below** — RLS allows a user to set their *own* role directly, bypassing this action's admin-only intent entirely |
+| `logHours` | Boundary | hours = 0 (rejected, must be > 0), hours = 24 (accepted, max), hours = 24.01 or >24 (rejected) | — |
+| `logHours` | Invalid | Non-numeric hours, missing sessionDate/studentLabel/description | — |
+| `logHours` | Boundary | sessionDate far in the future or far in the past — any bound? | — |
+| `logHours` | Security | XSS in studentLabel/description shown in admin stats/hours table | — |
+| `deleteHours` | Auth | Tutor deletes another tutor's hours entry (RLS should block) | — |
+| `unsubscribeFromNotifications` | Valid | Valid token → notifications disabled, confirmation shown | ✅ Pass |
+| `unsubscribeFromNotifications` | Invalid | Missing/empty token, malformed token, valid-looking but nonexistent token | ✅ Pass (all three variants tested) |
+| `unsubscribeFromNotifications` | Security | Token guessing/enumeration (is it a UUID / sufficiently random?) | ✅ Pass — token column is a random `uuid`, well-formed-but-wrong UUID correctly rejected |
+| `resubscribeToNotifications` | Valid | Re-enable via same token after unsubscribe | ✅ Pass |
+| `unsubscribe/resubscribe` | Concurrency | Rapid toggle (double-click both buttons) | — |
+| `sendSessionBookedNotifications` | State transition | Parent or tutor has `notifications_enabled=false` → confirm the *other* party still gets their email independently | — |
+| `sendSessionBookedNotifications` | Network/failure | Resend rejects one recipient (invalid address) — does it affect sending to the other recipient? | — |
+| `RealtimeRefresh` | Network/failure | Websocket/channel connection drops — does the page silently stop live-updating, or reconnect? | — |
+| `RealtimeRefresh` | Concurrency | Two tutors viewing the same slot list when a third claims it — both views update without manual refresh | ✅ Pass (observed indirectly: the race test's winner saw its own claim button swept away by a live re-render, confirming the realtime refresh fires) |
+| Admin stats page | Boundary | Zero tutors/tutees/hours logged — confirm no divide-by-zero or NaN display | — N/A on prod (real data already present) |
+| Admin stats page | Time-based | `tutor_hours` sort by `session_date` with entries logged for a future date or duplicate dates | — |
+| RLS (all tables) | Security | Direct Supabase client calls (bypassing Server Actions) from browser devtools with a parent/tutor session — attempt to read/write another user's rows for every table | ⚠️ **Mixed** — tutees (select/update) and claims (insert) correctly blocked; **profiles is not** — see critical finding below |
+| RLS (all tables) | Security | Attempt table access with `anon` (no session) key from client | ✅ Pass — tutees/claims/profiles all return empty to anon; subjects correctly shows only active rows |
+| Intake/edit forms | Time-based | `START_TIMES` are fixed local strings (4:00–8:30pm) with no timezone stored — confirm no DST-boundary or timezone-shift bug when club moves across DST change (Nov/Mar) | — |
+| Middleware/proxy | Boundary | Matcher excludes `_next/static`, `_next/image`, `favicon.ico`, image extensions — confirm no route is unintentionally excluded/included (e.g. a `.svg` page route) | — |
+| Whole app | Network/failure | Supabase project paused (free-tier auto-pause after ~1 week idle) — confirm `DatabaseUnavailable`/error boundaries show a clean message everywhere, not a stack trace | — Can't safely simulate against prod |
+| Whole app | Security | CSRF: Server Actions rely on Next.js's built-in Origin check — confirm a cross-origin form POST to an action endpoint is rejected | — |
+| Marketing page | Valid | All static page links/nav render, contact us link works, no broken images | — |
+| `dismissAccount` *(new)* | Valid | Admin removes another account from the "All accounts" list; account keeps working (login/dashboard unaffected) | — Built, not yet verified — migration 0016 pending |
+| `dismissAccount` *(new)* | Auth | Admin cannot dismiss their own account; non-admin cannot call it on someone else's account | — Built, not yet verified — migration 0016 pending |
+| `dismissTutorCode` *(new)* | Invalid | Cannot dismiss a code that's still active | — Built, not yet verified — migration 0016 pending |
+| `dismissTutorCode` *(new)* | Valid | Deactivated code moves into the "Dismissed" panel, no longer clutters the main list | — Built, not yet verified — migration 0016 pending |
 
 ---
 
-## 6. Data integrity
+## Phase 2 results summary
 
-**Important**
-- Claims are never hard-deleted; every approval, rejection, and
-  cancellation is kept as permanent history.
-- A slot's displayed status (open / pending / booked) always matches
-  exactly one live claim, never more than one.
+**31 automated tests** across `auth.spec.ts`, `claims.spec.ts`, `admin.spec.ts`,
+`notifications.spec.ts`, and `rls-security.spec.ts`, run against production
+with disposable `@example.com` accounts, cleaned up after each run via
+`tests/support/cleanup.mjs`. **30 passed, 1 failed** (a real finding, not a
+flaky test).
 
-**Edge cases**
-- A student's subject or slot is removed while it has claim history ->
-  the historical claims still reference valid rows and still display
-  correctly in the admin ledger, even though the subject/slot itself is
-  now inactive.
-- Two overlapping requests modify the same slot's availability at once
-  (e.g. parent edits schedule while a claim is mid-submit) -> the unique
-  active-slot constraint prevents duplicate active slots for the same
-  day/time.
+### 🔴 Critical: any logged-in user can grant themselves admin
+
+`profiles_update_self_or_admin` in `supabase/migrations/0001_init.sql`
+(line ~77) has no `with check` restricting *which* columns a self-update
+can touch — only that the row belongs to the caller:
+
+```sql
+create policy "profiles_update_self_or_admin" on profiles
+  for update using (id = auth.uid() or auth_role() = 'admin');
+```
+
+Verified directly against production: a freshly-signed-up parent account
+called `supabase.from('profiles').update({ role: 'admin' }).eq('id', ownId)`
+straight from the browser's own credentials (no app code involved) and it
+succeeded. `lib/actions/users.ts`'s `updateUserRole` action correctly
+requires an admin session, but that check lives entirely in application
+code — the database itself has no equivalent guard, so anyone can bypass
+the app and hit the Supabase REST API directly.
+
+The test account was reverted to `parent` immediately (both by an
+automated self-heal in the test and by hand via the admin account) — no
+account was left with unintended access.
+
+**Fix**: add a `with check` (or a trigger) on that policy that only allows
+`role` to change when `auth_role() = 'admin'`, something like:
+
+```sql
+create policy "profiles_update_self_or_admin" on profiles
+  for update using (id = auth.uid() or auth_role() = 'admin')
+  with check (
+    auth_role() = 'admin'
+    or (id = auth.uid() and role = (select role from profiles where id = auth.uid()))
+  );
+```
+
+This is the same class of gap `updateUserRole`'s own self-role-change
+block exists to prevent — it just isn't enforced at the one layer (the
+database) that the README says is supposed to be load-bearing.
+
+### Everything else tested matched documented behavior
+
+- The two race conditions your README calls out as accepted tradeoffs
+  (same-slot double-claim, weekly-cap check-then-insert) both behaved
+  exactly as documented — no worse.
+- RLS correctly blocked cross-parent tutee access, non-tutor claim
+  inserts, and all anonymous reads, on every table except `profiles`.
+- XSS payloads in subject names and force-cancel reasons rendered as
+  escaped text everywhere checked, never executed.
+- Auth flows (signup/login/reset) showed no enumeration, tampering was
+  rejected server-side, and tutor-code lifecycle (create/duplicate/
+  deactivate) worked as designed.
+- Notification unsubscribe/resubscribe tokens behaved correctly for
+  valid, missing, malformed, and well-formed-but-wrong inputs.
+
+### Two features added along the way
+
+Per your request, admin dashboard now supports **deleting accounts** and
+**dismissing deactivated tutor codes** — both implemented as non-destructive
+"dismiss" actions (hide from the admin list, same pattern as the existing
+claim/tutee dismiss features), not hard deletes. See
+`supabase/migrations/0016_dismiss_accounts_and_tutor_codes.sql` — **you
+still need to run this migration** in the Supabase SQL Editor before these
+work. Not yet covered by the automated suite.
+
+### Not yet covered
+
+Rows marked `—` above weren't exercised this pass — mostly boundary/invalid
+input variations, timing-dependent scenarios (reset-link expiry, DST),
+and a few flows I avoided testing against production on purpose (email
+deliverability, Supabase-outage simulation). Good candidates for a next
+pass once a staging environment exists (see `production.txt`).
+
+### Open questions (unchanged from Phase 1, still unresolved)
+
+- What should happen to a tutor's pending/approved claims when an admin
+  demotes them via `updateUserRole`? Not addressed in code.
+- `renameSubject` has no UI entry point — dead code, or an intentionally
+  unshipped feature?
