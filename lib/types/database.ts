@@ -21,6 +21,7 @@ export interface Database {
           email: string;
           notifications_enabled: boolean;
           unsubscribe_token: string;
+          admin_dismissed_at: string | null;
           created_at: string;
         };
         Insert: {
@@ -30,6 +31,7 @@ export interface Database {
           email: string;
           notifications_enabled?: boolean;
           unsubscribe_token?: string;
+          admin_dismissed_at?: string | null;
           created_at?: string;
         };
         Update: Partial<{
@@ -37,6 +39,7 @@ export interface Database {
           display_name: string;
           email: string;
           notifications_enabled: boolean;
+          admin_dismissed_at: string | null;
         }>;
         Relationships: [];
       };
@@ -237,17 +240,20 @@ export interface Database {
           id: string;
           code: string;
           is_active: boolean;
+          admin_dismissed_at: string | null;
           created_at: string;
         };
         Insert: {
           id?: string;
           code: string;
           is_active?: boolean;
+          admin_dismissed_at?: string | null;
           created_at?: string;
         };
         Update: Partial<{
           code: string;
           is_active: boolean;
+          admin_dismissed_at: string | null;
         }>;
         Relationships: [];
       };

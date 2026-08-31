@@ -38,3 +38,38 @@ export async function updateUserRole(
   revalidatePath("/dashboard/admin/users");
   return { success: "Role updated." };
 }
+
+// Clears an account off the "All accounts" table. Visibility only, same
+// pattern as dismissing a cancelled claim or a deleted student: the
+// account itself is untouched and keeps working exactly as before, this
+// just gets it out of an admin's way. An admin can't dismiss their own
+// account here, same reasoning as the self-role-change block above.
+export async function dismissAccount(
+  _prevState: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "You must be logged in." };
+
+  const targetId = String(formData.get("userId") ?? "");
+  if (targetId === user.id) {
+    return { error: "You can't remove your own account here." };
+  }
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .update({ admin_dismissed_at: new Date().toISOString() })
+    .eq("id", targetId)
+    .select("id");
+
+  if (error) return { error: error.message };
+  if (!data || data.length === 0) {
+    return { error: "This account can no longer be removed." };
+  }
+
+  revalidatePath("/dashboard/admin/users");
+  return { success: "Account removed from the list." };
+}
