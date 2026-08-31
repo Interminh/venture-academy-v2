@@ -135,7 +135,7 @@ in the **Result** column below and summarized at the end.
 | `updateUserRole` | Auth | Admin attempts to change their own role → blocked with specific message | ✅ Pass (blocked at UI level — no role selector rendered for self) |
 | `updateUserRole` | Invalid | role value outside admin/tutor/parent (tampered form field) | — |
 | `updateUserRole` | State transition | Demote a tutor who has pending/approved claims — what happens to those claims? (not addressed in code — ask) | — Still an open question, see Phase 2 notes |
-| `updateUserRole` | Auth | Non-admin calls this action directly | ❌ **See critical finding below** — RLS allows a user to set their *own* role directly, bypassing this action's admin-only intent entirely |
+| `updateUserRole` | Auth | Non-admin calls this action directly | ✅ **Pass (fixed)** — was a critical finding (see below), closed by migration 0017, re-verified against production |
 | `logHours` | Boundary | hours = 0 (rejected, must be > 0), hours = 24 (accepted, max), hours = 24.01 or >24 (rejected) | — |
 | `logHours` | Invalid | Non-numeric hours, missing sessionDate/studentLabel/description | — |
 | `logHours` | Boundary | sessionDate far in the future or far in the past — any bound? | — |
@@ -152,29 +152,31 @@ in the **Result** column below and summarized at the end.
 | `RealtimeRefresh` | Concurrency | Two tutors viewing the same slot list when a third claims it — both views update without manual refresh | ✅ Pass (observed indirectly: the race test's winner saw its own claim button swept away by a live re-render, confirming the realtime refresh fires) |
 | Admin stats page | Boundary | Zero tutors/tutees/hours logged — confirm no divide-by-zero or NaN display | — N/A on prod (real data already present) |
 | Admin stats page | Time-based | `tutor_hours` sort by `session_date` with entries logged for a future date or duplicate dates | — |
-| RLS (all tables) | Security | Direct Supabase client calls (bypassing Server Actions) from browser devtools with a parent/tutor session — attempt to read/write another user's rows for every table | ⚠️ **Mixed** — tutees (select/update) and claims (insert) correctly blocked; **profiles is not** — see critical finding below |
+| RLS (all tables) | Security | Direct Supabase client calls (bypassing Server Actions) from browser devtools with a parent/tutor session — attempt to read/write another user's rows for every table | ✅ **Pass (fixed)** — tutees/claims were always correctly blocked; profiles was not (critical finding, see below), now closed by migration 0017 |
 | RLS (all tables) | Security | Attempt table access with `anon` (no session) key from client | ✅ Pass — tutees/claims/profiles all return empty to anon; subjects correctly shows only active rows |
 | Intake/edit forms | Time-based | `START_TIMES` are fixed local strings (4:00–8:30pm) with no timezone stored — confirm no DST-boundary or timezone-shift bug when club moves across DST change (Nov/Mar) | — |
 | Middleware/proxy | Boundary | Matcher excludes `_next/static`, `_next/image`, `favicon.ico`, image extensions — confirm no route is unintentionally excluded/included (e.g. a `.svg` page route) | — |
 | Whole app | Network/failure | Supabase project paused (free-tier auto-pause after ~1 week idle) — confirm `DatabaseUnavailable`/error boundaries show a clean message everywhere, not a stack trace | — Can't safely simulate against prod |
 | Whole app | Security | CSRF: Server Actions rely on Next.js's built-in Origin check — confirm a cross-origin form POST to an action endpoint is rejected | — |
 | Marketing page | Valid | All static page links/nav render, contact us link works, no broken images | — |
-| `dismissAccount` *(new)* | Valid | Admin removes another account from the "All accounts" list; account keeps working (login/dashboard unaffected) | — Built, not yet verified — migration 0016 pending |
-| `dismissAccount` *(new)* | Auth | Admin cannot dismiss their own account; non-admin cannot call it on someone else's account | — Built, not yet verified — migration 0016 pending |
-| `dismissTutorCode` *(new)* | Invalid | Cannot dismiss a code that's still active | — Built, not yet verified — migration 0016 pending |
-| `dismissTutorCode` *(new)* | Valid | Deactivated code moves into the "Dismissed" panel, no longer clutters the main list | — Built, not yet verified — migration 0016 pending |
+| `dismissAccount` *(new)* | Valid | Admin removes another account from the "All accounts" list; account keeps working (login/dashboard unaffected) | ✅ Pass — moved to Dismissed panel, target account still logs in and reaches its dashboard afterward |
+| `dismissAccount` *(new)* | Auth | Admin cannot dismiss their own account; non-admin cannot call it on someone else's account | ✅ Pass — no Delete button rendered on the admin's own row |
+| `dismissTutorCode` *(new)* | Invalid | Cannot dismiss a code that's still active | ✅ Pass — no Dismiss button shown while a code is Active |
+| `dismissTutorCode` *(new)* | Valid | Deactivated code moves into the "Dismissed" panel, no longer clutters the main list | ✅ Pass |
 
 ---
 
 ## Phase 2 results summary
 
-**31 automated tests** across `auth.spec.ts`, `claims.spec.ts`, `admin.spec.ts`,
-`notifications.spec.ts`, and `rls-security.spec.ts`, run against production
-with disposable `@example.com` accounts, cleaned up after each run via
-`tests/support/cleanup.mjs`. **30 passed, 1 failed** (a real finding, not a
-flaky test).
+**34 automated tests** across `auth.spec.ts`, `claims.spec.ts`, `admin.spec.ts`,
+`notifications.spec.ts`, `rls-security.spec.ts`, and
+`admin-dismiss-features.spec.ts`, run against production with disposable
+`@example.com` accounts, cleaned up after each run via
+`tests/support/cleanup.mjs`. **All 34 pass as of the final run**, after
+fixing the one real finding below (it initially failed, by design — that's
+what caught it).
 
-### 🔴 Critical: any logged-in user can grant themselves admin
+### 🟢 Fixed: any logged-in user could grant themselves admin
 
 `profiles_update_self_or_admin` in `supabase/migrations/0001_init.sql`
 (line ~77) has no `with check` restricting *which* columns a self-update
@@ -197,21 +199,20 @@ The test account was reverted to `parent` immediately (both by an
 automated self-heal in the test and by hand via the admin account) — no
 account was left with unintended access.
 
-**Fix**: add a `with check` (or a trigger) on that policy that only allows
-`role` to change when `auth_role() = 'admin'`, something like:
+**Fixed** by `supabase/migrations/0017_prevent_self_role_escalation.sql`: a
+`before update` trigger on `profiles` that rejects any write changing
+`role` unless the caller is already an admin, using `OLD`/`NEW` directly
+(more reliable than a `with check` subquery against the same row being
+updated, which has MVCC-visibility edge cases). Re-ran
+`rls-security.spec.ts` against production after the migration was applied
+— the same escalation attempt that previously succeeded now fails with
+`"Only an admin can change a role."`, and the account stayed `parent`.
+`updateUserRole` and every other self-editable profile field are
+unaffected.
 
-```sql
-create policy "profiles_update_self_or_admin" on profiles
-  for update using (id = auth.uid() or auth_role() = 'admin')
-  with check (
-    auth_role() = 'admin'
-    or (id = auth.uid() and role = (select role from profiles where id = auth.uid()))
-  );
-```
-
-This is the same class of gap `updateUserRole`'s own self-role-change
-block exists to prevent — it just isn't enforced at the one layer (the
-database) that the README says is supposed to be load-bearing.
+This was the same class of gap `updateUserRole`'s own self-role-change
+block exists to prevent — it just wasn't enforced at the one layer (the
+database) that the README says is supposed to be load-bearing. It now is.
 
 ### Everything else tested matched documented behavior
 
@@ -233,10 +234,12 @@ database) that the README says is supposed to be load-bearing.
 Per your request, admin dashboard now supports **deleting accounts** and
 **dismissing deactivated tutor codes** — both implemented as non-destructive
 "dismiss" actions (hide from the admin list, same pattern as the existing
-claim/tutee dismiss features), not hard deletes. See
-`supabase/migrations/0016_dismiss_accounts_and_tutor_codes.sql` — **you
-still need to run this migration** in the Supabase SQL Editor before these
-work. Not yet covered by the automated suite.
+claim/tutee dismiss features), not hard deletes. Migration
+`0016_dismiss_accounts_and_tutor_codes.sql` is applied and both features
+are verified working against production (`admin-dismiss-features.spec.ts`):
+deleting an account moves it to the Dismissed panel while the account keeps
+logging in and working normally, an admin can't delete their own account,
+and a tutor code can only be dismissed once it's already deactivated.
 
 ### Not yet covered
 
