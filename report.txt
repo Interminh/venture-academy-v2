@@ -1,8 +1,7 @@
 Future:
 
 
--Contact me?
--Notifications? (Subscribe and unscribe) (Shift reset password to resend?)
+
 
 
 Do a full run through (first good claude prompt then my own prompt)
