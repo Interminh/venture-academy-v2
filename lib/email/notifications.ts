@@ -44,7 +44,7 @@ export async function sendSessionBookedNotifications({
       to: parent.email,
       subject: `A tutor has been confirmed for ${studentFirstName}`,
       text: [
-        `Hi ${parent.displayName},`,
+        `Hello ${parent.displayName},`,
         "",
         `${tutor.displayName} will be tutoring ${studentFirstName} in ${subjectName} on ${when}.`,
         "",
@@ -62,7 +62,7 @@ export async function sendSessionBookedNotifications({
       to: tutor.email,
       subject: `Your session with ${studentFirstName} has been accepted`,
       text: [
-        `Hi ${tutor.displayName},`,
+        `Hello ${tutor.displayName},`,
         "",
         `Your request to tutor ${studentFirstName} in ${subjectName} on ${when} has been accepted.`,
         "",
