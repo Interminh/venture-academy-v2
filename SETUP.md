@@ -147,6 +147,34 @@ npx supabase gen types typescript --project-id <your-project-ref> > lib/types/da
 If you used the CLI's `db push` instead of pasting SQL by hand, this also
 confirms the migrations applied the way you expect.
 
+## Operating in production
+
+**Code changes and database changes are separate.** Deploying to Vercel
+(pushing to `main`) only ships code, it never touches Supabase. The only
+thing that changes the schema is running a migration file yourself in the
+SQL Editor, on purpose, never as a side effect of a deploy.
+
+**Back up before any real migration.** Supabase includes some automatic
+backups even on the free tier, check **Project Settings → Database →
+Backups** for what your plan actually covers rather than trusting a
+number written here, plan details change. Take your own snapshot right
+before anything risky anyway: click **Create backup** on that same page,
+or run `node scripts/backup-db.mjs` for a local JSON copy (see the
+README's Database section). Every migration through `0017` is purely
+additive, new columns, new tables, new policies, nothing has ever dropped
+or renamed existing data. Keep it that way if you can; a migration that
+drops a column or adds a `not null` constraint without a default on a
+table that already has rows can fail outright or destroy data.
+
+**There's no staging environment.** Local dev and Vercel preview
+deployments both point at the same Supabase project real families use,
+whatever `.env.local` has. Testing a schema change "locally" still means
+running it against the real database. If that ever matters enough to fix:
+spin up a second, free Supabase project as dev/staging, run all the
+migrations on it, point `.env.local` there instead, and optionally scope
+a separate set of credentials to Vercel's Preview environment so shared
+preview links don't touch real data either.
+
 ## Notes on what's deliberately not set up
 
 - **No OAuth, no magic link.** Email and password only, so nothing ever
