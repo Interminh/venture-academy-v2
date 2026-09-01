@@ -65,7 +65,7 @@ test("dismiss tutor code: blocked while active, works once deactivated", async (
     .locator('xpath=ancestor::div[contains(@class,"justify-between")]')
     .first();
 
-  // While active, there's no Dismiss button at all — only Deactivate.
+  // While active, there's no Dismiss button at all, only Deactivate.
   await expect(row.locator('button:has-text("Dismiss")')).toHaveCount(0);
 
   await row.locator('button:has-text("Deactivate")').click();

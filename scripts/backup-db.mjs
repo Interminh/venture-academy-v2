@@ -6,7 +6,7 @@ import { createClient } from "@supabase/supabase-js";
 try {
   process.loadEnvFile(new URL("../.env.test", import.meta.url));
 } catch {
-  // .env.test not present — fall back to whatever's already in the environment.
+  // .env.test not present, fall back to whatever's already in the environment.
 }
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -21,10 +21,10 @@ const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { autoRefreshToken: false, persistSession: false },
 });
 
-// Snapshots every row via the REST API using the service-role key (bypasses
-// RLS, same as a real pg_dump would), rather than a direct Postgres
-// connection — no database password needed. Covers every table this app
-// actually reads/writes; add a name here if a future migration adds one.
+// Snapshots every row via the REST API using the service-role key. Bypasses
+// RLS like a real pg_dump would, but needs no database password. Covers
+// every table this app reads or writes; add a name here if a migration
+// adds a new one.
 const TABLES = [
   "subjects",
   "tutor_signup_codes",

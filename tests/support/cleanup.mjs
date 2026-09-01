@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 try {
   process.loadEnvFile(new URL("../../.env.test", import.meta.url));
 } catch {
-  // .env.test not present — fall back to whatever's already in the environment.
+  // .env.test not present, fall back to whatever's already in the environment.
 }
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -21,10 +21,10 @@ const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
 const DRY_RUN = process.argv.includes("--dry-run");
 
 async function main() {
-  console.log(DRY_RUN ? "DRY RUN — no changes will be made\n" : "LIVE RUN — deleting test data\n");
+  console.log(DRY_RUN ? "DRY RUN, no changes will be made\n" : "LIVE RUN, deleting test data\n");
 
   // 1. Tutees named with the QA test prefix. Deleting cascades to
-  // tutee_subjects, availability_slots, and (via slot) claims — all pure
+  // tutee_subjects, availability_slots, and (via slot) claims, all pure
   // test data, no real history worth preserving here.
   const { data: tutees } = await admin.from("tutees").select("id, first_name").ilike("first_name", "QA%");
   console.log(`Tutees to remove: ${tutees?.length ?? 0}`);
@@ -52,7 +52,7 @@ async function main() {
     if (error) console.error("tutor_signup_codes delete error:", error.message);
   }
 
-  // 4. Auth users created during testing (@example.com addresses only —
+  // 4. Auth users created during testing (@example.com addresses only,
   // never touches a real account). Deleting the auth user cascades to
   // profiles via its FK, and to tutor_hours/claims as tutor_id if any
   // remain (none should, since step 1 already removed claim-bearing rows).
