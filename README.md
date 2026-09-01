@@ -42,8 +42,9 @@ Browses open slots, submits claims, and cancels their own bookings.
 
 **Admin**
 Club directors. Approve or reject claims, force-cancel any booking,
-manage the subject list and tutor sign-up codes, and can promote or
-demote any account's role.
+manage the subject list and tutor sign-up codes, promote or demote any
+account's role, and remove accounts or retired tutor codes from view
+without deleting their history.
 
 ## Stack
 
@@ -76,7 +77,15 @@ supabase/
   migrations/             schema, in order, 0001 onward
   dev/                    scripts for local development only, not for production
   seed.sql                starter subject list
+tests/
+  e2e/                    Playwright suite: auth, claims, admin, RLS
+  support/                shared test helpers and the test-data cleanup script
+scripts/
+  backup-db.mjs           snapshots every table to a local JSON file
 ```
+
+See [`TEST_SCENARIOS.md`](./TEST_SCENARIOS.md) for the full test surface
+and the results of the last full pass.
 
 `components/slots/StatusTrack.tsx` is worth a look on its own: it's the
 one status indicator (open, pending, booked) reused everywhere a slot's
@@ -105,6 +114,30 @@ ID.
 `lib/types/database.ts` is hand-written to match the migrations so the
 app type-checks without a live project connected. Once you've linked a
 real project, regenerate it with the Supabase CLI (see `SETUP.md`).
+
+**Backups.** `scripts/backup-db.mjs` snapshots every table, plus every
+account, straight through the Supabase API using the service-role key, so
+it needs no database password. Run it with `node scripts/backup-db.mjs`;
+it writes a timestamped JSON file to `backups/` (gitignored, since it
+holds real user data).
+
+## Testing
+
+`tests/e2e/` is a Playwright suite that drives the real app, real signups,
+real claims, real admin actions, plus a few tests that call the Supabase
+API directly to check Row Level Security boundaries the UI never exposes.
+It's meant to run against an actual Supabase project, not mocks.
+
+```bash
+npm install
+cp .env.test.example .env.test   # fill in your project's URL, anon key, and service-role key
+npx playwright install chromium
+npx playwright test
+```
+
+The suite creates disposable `@example.com` test accounts and cleans them
+up afterward with `tests/support/cleanup.mjs`. Don't point `.env.test` at
+a database with real users you care about without running that cleanup.
 
 ## Rate limits
 
@@ -156,7 +189,11 @@ plain-text courtesy notice, Gmail SMTP is a reasonable place to start.
 - **Role is never trusted from the client.** Every Server Action
   re-checks who's making the request, and RLS checks it again
   independently at the database layer, so a tampered request can't
-  grant itself a role or reach a permission the UI doesn't expose.
+  reach a permission the UI doesn't expose.
+- **Role changes are enforced at the database layer, not just by the
+  app.** A trigger on `profiles` rejects any update that changes a role
+  unless the caller is already an admin, so this can't be done by calling
+  the Supabase API directly and skipping the app's own checks.
 - **Tutor codes never leak.** A signup request checks a code's validity
   through a security-definer function that can confirm a match without
   ever letting an unauthenticated caller read the codes table or learn
