@@ -1,6 +1,6 @@
 # Venture Academy Tutors
 
-Venture Academy Tutors (VAT) is a club at Interlake High School that
+Venture Academy Tutors (VAT) is a *club* at Interlake High School that
 matches K-8 students in the Bellevue School District with volunteer teen
 tutors, free of charge. This repo is the club's web app: it replaces an
 older static site backed by Google Sheets and Apps Script with a proper
