@@ -149,6 +149,35 @@ export async function requestPasswordReset(
   };
 }
 
+// A `next` value like "@evil.com/path" turns into a valid URL when
+// concatenated with origin (the "@" makes everything before it userinfo,
+// so the browser treats evil.com as the actual host), an open redirect.
+// The app only ever sends "/reset-password" here itself, so anything that
+// doesn't look like a plain same-origin path gets ignored.
+function isSafeRedirectPath(path: string): boolean {
+  return path.startsWith("/") && !path.startsWith("//") && !path.includes("@");
+}
+
+// Exchanges a password-recovery code for a session, then sends the user to
+// set a new password. Only reached by an explicit click on /auth/callback's
+// confirm button, not by the initial page load, so a link-scanner's
+// automatic GET can't burn the code before the real user gets to it.
+export async function confirmRecovery(formData: FormData) {
+  const code = String(formData.get("code") ?? "");
+  const requestedNext = String(formData.get("next") ?? "");
+  const next = isSafeRedirectPath(requestedNext) ? requestedNext : "/reset-password";
+
+  if (code) {
+    const supabase = await createClient();
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (!error) {
+      redirect(next);
+    }
+  }
+
+  redirect("/login");
+}
+
 export async function resetPassword(
   _prevState: ActionState,
   formData: FormData
