@@ -6,10 +6,7 @@ import type { Database } from "@/lib/types/database";
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-// Bypasses the Next.js app entirely and talks to the same public
-// Supabase REST endpoint the browser bundle does, using only the anon key.
-// This is exactly what a malicious/curious authenticated user could do
-// from devtools, so it's the right layer to test RLS boundaries at.
+// Talks to the Supabase REST API with the anon key, like a user from devtools, to test RLS directly.
 
 test("self role update: can a plain user grant themselves admin via a direct API call?", async () => {
   const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -46,9 +43,7 @@ test("self role update: can a plain user grant themselves admin via a direct API
       "SECURITY FINDING: a freshly signed-up parent account granted itself admin " +
         "via a direct Supabase update call, bypassing the app's updateUserRole action entirely."
     );
-    // Self-heal immediately: this session still satisfies id = auth.uid(),
-    // so it can revert its own row the same way it escalated it, closing
-    // the exposure window on this test account without touching anyone else.
+    // Revert the test account's own escalation right away.
     await supabase.from("profiles").update({ role: "parent" }).eq("id", userId);
   }
 
@@ -71,8 +66,7 @@ test("anon (no session) cannot read tutees, claims, or profiles", async () => {
     profilesErr: profilesErr?.message,
   });
 
-  // RLS should return an empty set (not an error, and not real rows) for
-  // every one of these to an unauthenticated caller.
+  // RLS should return an empty set for an unauthenticated caller.
   expect(tutees ?? []).toHaveLength(0);
   expect(claims ?? []).toHaveLength(0);
   expect(profiles ?? []).toHaveLength(0);
@@ -122,7 +116,7 @@ test("a parent cannot read another parent's tutee by guessing/enumerating its id
 
   expect(leaked ?? []).toHaveLength(0);
 
-  // Also confirm B can't update or delete A's tutee directly.
+  // B also can't update or delete A's tutee.
   const { data: updateResult } = await supabaseB
     .from("tutees")
     .update({ first_name: "Hacked" })
@@ -135,11 +129,7 @@ test("a tutor cannot insert a claim as another tutor (tutor_id spoofing)", async
   const supabaseAdmin = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY);
   const email = testEmail("spoof-tutor");
   const password = "testpass123";
-  // No valid tutor code available in this isolated script context, so this
-  // account signs up as parent; the insert should be rejected by RLS
-  // (claims_insert_tutor requires auth_role() = 'tutor') regardless, which
-  // is itself the thing being tested: a non-tutor cannot insert a claim
-  // no matter whose tutor_id they attach.
+  // No tutor code here, so this signs up as a parent and RLS should reject the claim insert.
   await supabaseAdmin.auth.signUp({
     email,
     password,

@@ -2,10 +2,7 @@ import { test, expect } from "@playwright/test";
 import { testEmail, testName, logCreated } from "../support/testData";
 import { ADMIN_EMAIL } from "../support/testConfig";
 
-// All accounts created here use @example.com addresses (IANA-reserved,
-// never delivers real mail) so nothing sent by the app during testing
-// reaches a real person. Production auto-confirms email on signup
-// (migration 0002), so no inbox is needed to log in immediately after.
+// Uses @example.com addresses (never delivers mail). Prod auto-confirms, so no inbox is needed.
 
 test.describe("signup", () => {
   test("parent signup with valid data succeeds", async ({ page }) => {
@@ -20,8 +17,7 @@ test.describe("signup", () => {
     await expect(page.locator("text=Almost done").or(page.locator("text=dashboard"))).toBeVisible({
       timeout: 10_000,
     }).catch(async () => {
-      // No email confirmation required in prod, so a successful signup
-      // may redirect straight to /dashboard instead of showing a message.
+      // Signup may redirect straight to /dashboard since prod skips email confirmation.
       await expect(page).toHaveURL(/dashboard/);
     });
 
@@ -34,8 +30,7 @@ test.describe("signup", () => {
     await page.fill("#email", testEmail("short-pw"));
     await page.fill("#password", "short1");
     await page.check('input[name="notificationsAcknowledged"]');
-    // minLength=8 is enforced client-side by the browser too; force past it
-    // via direct submission to confirm the server also rejects it.
+    // Bypass the browser's minLength to confirm the server also rejects it.
     await page.evaluate(() => {
       const input = document.getElementById("password") as HTMLInputElement;
       input.removeAttribute("minlength");
@@ -49,7 +44,7 @@ test.describe("signup", () => {
     await page.goto("/signup");
     await page.check('input[name="notificationsAcknowledged"]');
     await page.click('button[type="submit"]');
-    // Browser-native "required" validation should block submission client-side.
+    // Native "required" validation should block submission.
     const displayNameInvalid = await page
       .locator("#displayName")
       .evaluate((el: HTMLInputElement) => !el.validity.valid);
@@ -88,8 +83,7 @@ test.describe("signup", () => {
     await page.fill("#email", email);
     await page.fill("#password", "testpass123");
     await page.check('input[name="notificationsAcknowledged"]');
-    // Inject a role field the real form never sends, to confirm the server
-    // action ignores any client-supplied role rather than trusting it.
+    // Inject a role field the real form never sends, to confirm the server ignores it.
     await page.evaluate(() => {
       const form = document.querySelector("form")!;
       const hidden = document.createElement("input");
@@ -100,8 +94,7 @@ test.describe("signup", () => {
     });
     await page.click('button[type="submit"]');
     logCreated("profile", email);
-    // Assertion of actual role happens in admin.spec.ts by checking the
-    // users list never shows this account as admin.
+    // The role itself is checked in admin.spec.ts.
   });
 
   test("duplicate email on signup tells the user, not a fake success", async ({ page }) => {

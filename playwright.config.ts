@@ -3,7 +3,7 @@ import { defineConfig } from "@playwright/test";
 try {
   process.loadEnvFile(".env.test");
 } catch {
-  // .env.test not present, fall back to whatever's already in the environment.
+  // No .env.test, fall back to the environment.
 }
 
 export default defineConfig({

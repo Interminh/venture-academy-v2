@@ -19,9 +19,7 @@ test.describe("subjects", () => {
     const executed = await page.evaluate((tag) => (window as unknown as Record<string, unknown>)[`__xss_${tag}`], runTag);
     expect(executed).toBeUndefined();
 
-    // The literal text (including the tags-as-text) should still be visible
-    // somewhere, proving it was escaped and rendered as text, not stripped
-    // silently either.
+    // The tags should show as escaped text, not be stripped.
     await expect(page.locator(`text=${runTag}`).first()).toBeVisible();
   });
 
@@ -155,7 +153,7 @@ test.describe("user roles", () => {
       timeout: 10_000,
     });
 
-    // Revert immediately so no test account is left with admin access.
+    // Revert so no test account keeps admin access.
     await page.locator("tr", { hasText: tutorEmail }).locator("select").selectOption("tutor");
     await page.waitForLoadState("networkidle");
     await page.reload();
@@ -229,7 +227,7 @@ test.describe("force-cancel and ledger", () => {
     );
     expect(executed).toBeUndefined();
 
-    // Confirm the row now shows cancelled status, not stuck approved.
+    // The row should show cancelled, not approved.
     await page.reload();
     await expect(page.locator("tr", { hasText: tuteeName }).first().locator("text=Cancelled")).toBeVisible({
       timeout: 10_000,

@@ -25,8 +25,7 @@ async function createTuteeWithSlots(
   if (opts.maxWeeklySessions) {
     await page.fill("#maxWeeklySessions", String(opts.maxWeeklySessions));
   }
-  // Pick the first available subject chip regardless of name (subject list
-  // is seeded and may vary), unless a specific one is requested.
+  // Pick the first subject chip unless a specific one is requested.
   if (opts.subjectName) {
     await page.click(`label:has-text("${opts.subjectName}")`);
   } else {
@@ -92,22 +91,16 @@ test("two tutors claiming the same open slot at once: exactly one succeeds", asy
     tutorBPage.click('button:has-text("Claim")').then(() => tutorBPage.waitForTimeout(3000)),
   ]);
 
-  // The winner's ClaimButton gets swept away by the realtime refresh before
-  // "Claim submitted" can be observed (the slot re-renders as Pending, with
-  // no claim form left at all), so check for the loser's rejection message
-  // instead of the winner's transient success text.
+  // The winner's success text is swept away by the realtime refresh, so check the loser's rejection instead.
   const aRejected = await tutorAPage.locator("text=Someone just claimed this slot").isVisible();
   const bRejected = await tutorBPage.locator("text=Someone just claimed this slot").isVisible();
 
   console.log({ aRejected, bRejected });
 
-  // Exactly one tutor should be rejected by the race guard; the other's
-  // claim should have gone through, never both succeeding (double-booked)
-  // or both failing.
+  // Exactly one claim should win, never both or neither.
   expect([aRejected, bRejected].filter(Boolean).length).toBe(1);
 
-  // Confirm the slot actually ended up Pending (the winner's claim landed),
-  // not stuck Open (both silently failed).
+  // The slot should end up Pending, not Open.
   await tutorAPage.reload();
   await tutorAPage.click(`button:has-text("${tuteeName}")`);
   await expect(tutorAPage.locator("text=Pending").first()).toBeVisible({ timeout: 10_000 });
@@ -149,8 +142,7 @@ test("weekly session cap blocks a second live claim once reached", async ({ brow
   const claimForms = tutorPage.locator('form:has(button:has-text("Claim"))');
   await claimForms.nth(0).locator("select").selectOption({ index: 1 });
   await claimForms.nth(0).locator('button:has-text("Claim")').click();
-  // The realtime refresh sweeps away the transient "Claim submitted" text
-  // as soon as the slot re-renders Pending, so confirm the status instead.
+  // Realtime refresh clears the success text, so check the status instead.
   await tutorPage.waitForTimeout(2000);
 
   await tutorPage.reload();

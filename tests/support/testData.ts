@@ -1,10 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-// A single run id ties every fake account/record created during a test run
-// together, so cleanup.ts can find and remove exactly what this run made
-// and nothing else. @example.com never delivers real mail (IANA-reserved),
-// so any notification email the app sends during testing reaches no one.
+// One run id ties every fake record together so cleanup removes only this run's data.
 export const RUN_ID = process.env.VAT_TEST_RUN_ID ?? Date.now().toString(36);
 
 export function testEmail(label: string): string {
