@@ -1,16 +1,4 @@
--- Fixes a data-loss bug: a parent's edit form only ever fetched
--- `is_active = true` subjects (both by its own filter and because RLS
--- already hid inactive ones from non-admins). If an admin deactivated a
--- subject a tutee already needed, that subject's checkbox silently
--- disappeared from the edit form, so the next unrelated save (e.g. just
--- changing the grade) submitted a subject list missing it and
--- `updateTutee` read that as "parent removed this subject," deleting the
--- tutee_subjects row for good.
---
--- The fix needs the parent to actually be able to see the (now inactive)
--- subject's name so it can keep rendering as a checked, still-selected
--- option. This widens `subjects_select` to also allow a subject through
--- when it's already attached to one of the caller's own tutees.
+-- Lets parents see inactive subjects already on their tutees, so a save doesn't drop them.
 
 begin;
 

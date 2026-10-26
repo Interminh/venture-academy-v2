@@ -1,7 +1,4 @@
--- Dev-only cleanup: drops everything 0001_init.sql creates, so you can
--- re-run that migration from a clean slate after a partial/failed attempt.
--- Safe to run even if some objects don't exist (IF EXISTS everywhere).
--- Never run this against a project with real data you care about.
+-- Dev only: drops everything 0001_init.sql creates. Never run against real data.
 
 begin;
 

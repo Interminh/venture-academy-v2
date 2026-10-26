@@ -1,9 +1,4 @@
--- Lets a parent or tutor opt out of session-notification emails (a claim
--- getting approved) without touching the separate, always-sent password
--- reset flow. unsubscribe_token is a standalone secret, not the user's
--- id, so the one-click link in an email can flip this off without the
--- recipient ever needing to be logged in, and without exposing anything
--- guessable.
+-- Opt-out for session emails, with a standalone token so unsubscribe links need no login.
 
 begin;
 

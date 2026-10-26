@@ -1,8 +1,4 @@
--- Lets a tutor log hours worked: date, hours, who it was for (freeform,
--- not tied to a specific claim. A tutor might log time for a student
--- whose booking predates this feature, or for something not modeled as a
--- claim at all), and an optional description. Feeds the admin stats
--- dashboard's "total hours tutored" figure.
+-- Tutor hour logs, feeding the admin stats total.
 
 begin;
 
@@ -21,8 +17,7 @@ alter table tutor_hours enable row level security;
 create policy "tutor_hours_select" on tutor_hours
   for select using (tutor_id = auth.uid() or auth_role() = 'admin');
 
--- A tutor manages their own entries; an admin can also fix/remove one
--- (e.g. a typo'd hour count) without needing the original tutor's help.
+-- Tutors manage their own entries and admins can fix any.
 create policy "tutor_hours_write" on tutor_hours
   for all using (tutor_id = auth.uid() or auth_role() = 'admin')
   with check (tutor_id = auth.uid() or auth_role() = 'admin');

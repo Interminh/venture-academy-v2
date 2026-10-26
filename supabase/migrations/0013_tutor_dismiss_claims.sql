@@ -1,10 +1,4 @@
--- Lets a tutor clear a cancelled or rejected claim off their own "My
--- sessions" list. This is a per-tutor visibility flag, not a delete: the
--- claim row, its status, and every audit field stay exactly as they are,
--- so the admin ledger is unaffected. Only the tutor who owns the claim
--- can set it, and only once the claim has left the live pending/approved
--- flow, dismissing something still in play would just be a confusing way
--- to hide an active booking.
+-- Lets a tutor hide their own cancelled or rejected claims. History is untouched.
 
 begin;
 

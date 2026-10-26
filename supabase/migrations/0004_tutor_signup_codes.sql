@@ -1,9 +1,4 @@
--- Lets tutors self-register at /signup instead of needing an admin-sent
--- email invite (which depends on Supabase's email sending working). A
--- tutor enters a shared code at signup; it's validated server-side via a
--- security-definer function, so an unauthenticated signup request can
--- check a code is valid without ever being able to read the codes table
--- itself (no enumeration of active codes).
+-- Tutor self-signup codes, validated by a security-definer function so the codes table stays unreadable.
 
 begin;
 
@@ -16,15 +11,14 @@ create table tutor_signup_codes (
 
 alter table tutor_signup_codes enable row level security;
 
--- Only admins can see or manage the codes list itself.
+-- Only admins can see or manage codes.
 create policy "tutor_signup_codes_select_admin" on tutor_signup_codes
   for select using (auth_role() = 'admin');
 
 create policy "tutor_signup_codes_write_admin" on tutor_signup_codes
   for all using (auth_role() = 'admin') with check (auth_role() = 'admin');
 
--- Callable by anyone (including an unauthenticated signup request) to
--- check a code without exposing which codes exist or how many there are.
+-- Lets an unauthenticated signup check a code without exposing the list.
 create function is_valid_tutor_code(input_code text)
 returns boolean
 language sql
@@ -40,9 +34,7 @@ $$;
 
 grant execute on function is_valid_tutor_code(text) to anon, authenticated;
 
--- Explicit, not just relying on the ALTER DEFAULT PRIVILEGES from
--- 0003_grants.sql. See that file for why this base grant matters even
--- though RLS policies already exist above.
+-- Explicit grant, see 0003_grants.sql.
 grant select, insert, update, delete on tutor_signup_codes
   to anon, authenticated, service_role;
 

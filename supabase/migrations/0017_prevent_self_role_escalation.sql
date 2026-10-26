@@ -1,17 +1,4 @@
--- Closes a privilege-escalation hole in profiles_update_self_or_admin
--- (0001): it lets a user update their own row but never checks which
--- columns change, so any logged-in user could call the Supabase REST API
--- directly and set their own role to admin, bypassing updateUserRole
--- entirely. Verified live against production with a disposable account,
--- then reverted immediately; see TEST_SCENARIOS.md.
---
--- A trigger instead of a with-check clause: a with-check subquery on the
--- same row being updated has MVCC visibility edge cases, a trigger's
--- OLD/NEW don't.
---
--- Only gates the role column. Admins are unaffected (auth_role() =
--- 'admin' short-circuits the check), and every other self-editable field
--- keeps working as before.
+-- Trigger that blocks non-admins from changing their own role, closing a privilege escalation.
 
 begin;
 
