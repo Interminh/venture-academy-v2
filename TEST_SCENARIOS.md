@@ -10,7 +10,7 @@ in the **Result** column below and summarized at the end.
 
 ## App surface
 
-**Auth** (`lib/actions/auth.ts`, `app/auth/callback/route.ts`, `proxy.ts`)
+**Auth** (`lib/actions/auth.ts`, `app/auth/callback/page.tsx`, `proxy.ts`)
 - `signUp`, `signIn`, `signOut`, `requestPasswordReset`, `resetPassword`
 - `/auth/callback` (exchanges recovery code for session)
 - `updateSession` (role-gating + session refresh on every request)
@@ -168,108 +168,76 @@ in the **Result** column below and summarized at the end.
 
 ## Phase 2 results summary
 
-**34 automated tests** across `auth.spec.ts`, `claims.spec.ts`, `admin.spec.ts`,
-`notifications.spec.ts`, `rls-security.spec.ts`, and
-`admin-dismiss-features.spec.ts`, run against production with disposable
-`@example.com` accounts, cleaned up after each run via
-`tests/support/cleanup.mjs`. **All 34 pass as of the final run**, after
-fixing the automated suite's one real finding (it initially failed, by
-design, that's what caught it). A second finding, an open redirect, turned
-up in a manual code review pass afterward and is fixed too, but isn't
-covered by an automated test yet.
+**34 automated tests** across `auth.spec.ts`, `claims.spec.ts`,
+`admin.spec.ts`, `notifications.spec.ts`, `rls-security.spec.ts`, and
+`admin-dismiss-features.spec.ts` ran against production with disposable
+`@example.com` accounts, cleaned up by `tests/support/cleanup.mjs`. All 34
+pass. The suite caught one real finding, and a manual code review found a
+second (open redirect), which has no automated test yet.
 
-### 🟢 Fixed: any logged-in user could grant themselves admin
+### Fixed: any logged-in user could grant themselves admin
 
-`profiles_update_self_or_admin` in `supabase/migrations/0001_init.sql`
-(line ~77) has no `with check` restricting *which* columns a self-update
-can touch, only that the row belongs to the caller:
+`profiles_update_self_or_admin` in `0001_init.sql` had no check on which
+columns a self-update could touch:
 
 ```sql
 create policy "profiles_update_self_or_admin" on profiles
   for update using (id = auth.uid() or auth_role() = 'admin');
 ```
 
-Verified directly against production: a freshly-signed-up parent account
-called `supabase.from('profiles').update({ role: 'admin' }).eq('id', ownId)`
-straight from the browser's own credentials (no app code involved) and it
-succeeded. `lib/actions/users.ts`'s `updateUserRole` action correctly
-requires an admin session, but that check lives entirely in application
-code, the database itself has no equivalent guard, so anyone can bypass
-the app and hit the Supabase REST API directly.
+A fresh parent account called
+`supabase.from('profiles').update({ role: 'admin' }).eq('id', ownId)`
+straight from the browser and it succeeded. `updateUserRole` checks for an
+admin session, but only in app code, so anyone could skip it and hit the
+Supabase API directly. The test account was reverted to `parent` right
+away.
 
-The test account was reverted to `parent` immediately (both by an
-automated self-heal in the test and by hand via the admin account), no
-account was left with unintended access.
+**Fix:** `0017_prevent_self_role_escalation.sql` adds a `before update`
+trigger on `profiles` that rejects role changes unless the caller is an
+admin. It uses `OLD` and `NEW` instead of a `with check` subquery, which
+has MVCC visibility edge cases. After applying it, `rls-security.spec.ts`
+showed the same attempt failing with "Only an admin can change a role."
+`updateUserRole` and other self-editable fields are unaffected.
 
-**Fixed** by `supabase/migrations/0017_prevent_self_role_escalation.sql`: a
-`before update` trigger on `profiles` that rejects any write changing
-`role` unless the caller is already an admin, using `OLD`/`NEW` directly
-(more reliable than a `with check` subquery against the same row being
-updated, which has MVCC-visibility edge cases). Re-ran
-`rls-security.spec.ts` against production after the migration was applied.
-The same escalation attempt that previously succeeded now fails with
-`"Only an admin can change a role."`, and the account stayed `parent`.
-`updateUserRole` and every other self-editable profile field are
-unaffected.
+### Fixed: open redirect in the password-reset callback
 
-This was the same class of gap `updateUserRole`'s own self-role-change
-block exists to prevent, it just wasn't enforced at the one layer (the
-database) that the README says is supposed to be load-bearing. It now is.
+The callback built its redirect as `${origin}${next}` with `next` taken
+from the query string. A value like `@evil.com/path` makes the browser
+treat `evil.com` as the host. The app only sends `next=/reset-password`,
+so exploiting it needs a hand-crafted link with a valid reset code.
 
-### 🟢 Fixed: open redirect in the password-reset callback
+**Fix:** `next` must now be a plain same-origin path (a single leading
+`/`, no `@`), otherwise it falls back to `/reset-password`.
 
-`app/auth/callback/route.ts` built its redirect target as `${origin}${next}`,
-with `next` read straight from the query string. A value like
-`@evil.com/path` turns that into a URL a browser will treat as pointing at
-`evil.com`: the `@` makes everything before it userinfo, not part of the
-host. The app itself only ever sends `next=/reset-password`, so this is
-only reachable if someone hand-crafts a callback link with both a valid
-password-reset code and a malicious `next` value, narrow, but real.
+### Everything else matched documented behavior
 
-Fixed by validating `next` is a plain same-origin path (starts with a
-single `/`, no `@`) before using it, falling back to `/reset-password`
-otherwise. Found via code review while doing a final pass before
-considering the app launch-ready, not caught by the automated suite, so
-it's not a regression test yet.
-
-### Everything else tested matched documented behavior
-
-- The two race conditions your README calls out as accepted tradeoffs
-  (same-slot double-claim, weekly-cap check-then-insert) both behaved
-  exactly as documented, no worse.
-- RLS correctly blocked cross-parent tutee access, non-tutor claim
-  inserts, and all anonymous reads, on every table except `profiles`.
+- Both accepted race conditions (same-slot double claim, weekly-cap
+  check-then-insert) behaved as documented.
+- RLS blocked cross-parent tutee access, non-tutor claim inserts, and all
+  anonymous reads on every table except `profiles` (now fixed).
 - XSS payloads in subject names and force-cancel reasons rendered as
-  escaped text everywhere checked, never executed.
-- Auth flows (signup/login/reset) showed no enumeration, tampering was
-  rejected server-side, and tutor-code lifecycle (create/duplicate/
-  deactivate) worked as designed.
-- Notification unsubscribe/resubscribe tokens behaved correctly for
-  valid, missing, malformed, and well-formed-but-wrong inputs.
+  escaped text.
+- Signup, login, and reset showed no enumeration, and server-side
+  tampering was rejected.
+- Unsubscribe and resubscribe tokens handled valid, missing, malformed,
+  and wrong inputs correctly.
 
-### Two features added along the way
+### Added during testing
 
-Per your request, admin dashboard now supports **deleting accounts** and
-**dismissing deactivated tutor codes**, both implemented as non-destructive
-"dismiss" actions (hide from the admin list, same pattern as the existing
-claim/tutee dismiss features), not hard deletes. Migration
-`0016_dismiss_accounts_and_tutor_codes.sql` is applied and both features
-are verified working against production (`admin-dismiss-features.spec.ts`):
-deleting an account moves it to the Dismissed panel while the account keeps
-logging in and working normally, an admin can't delete their own account,
-and a tutor code can only be dismissed once it's already deactivated.
+Admins can now dismiss accounts and deactivated tutor codes. Both hide the
+item from the admin list without deleting anything, like the claim and
+tutee dismiss features. Migration `0016` is applied and verified in
+`admin-dismiss-features.spec.ts`.
 
 ### Not yet covered
 
-Rows marked "not tested" above weren't exercised this pass, mostly boundary/invalid
-input variations, timing-dependent scenarios (reset-link expiry, DST),
-and a few flows I avoided testing against production on purpose (email
-deliverability, Supabase-outage simulation). Good candidates for a next
-pass once a staging environment exists (see `production.txt`).
+Rows marked "not tested" above were skipped. Most are boundary and
+invalid-input cases, timing-dependent cases (reset-link expiry, DST), and
+flows I avoided on production (email deliverability, Supabase outage).
+They're good candidates once there's a staging environment.
 
-### Open questions (unchanged from Phase 1, still unresolved)
+### Open questions
 
-- What should happen to a tutor's pending/approved claims when an admin
-  demotes them via `updateUserRole`? Not addressed in code.
-- `renameSubject` has no UI entry point, dead code, or an intentionally
-  unshipped feature?
+- What should happen to a tutor's pending and approved claims when an
+  admin demotes them?
+- `renameSubject` has no UI. Is it dead code or an unshipped feature?
