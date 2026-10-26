@@ -230,7 +230,6 @@ create policy "profiles_select_approved_tutor" on profiles
   );
 
 -- slot_status: derived status for the UI. Approved shows as "Booked" in the app.
--- ---------------------------------------------------------------------------
 
 create view slot_status
 with (security_invoker = on) as
