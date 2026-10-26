@@ -8,10 +8,7 @@ const ROLE_HOME: Record<string, string> = {
   parent: "/dashboard/parent",
 };
 
-// Refreshes the Supabase session cookie on every request and enforces
-// role-gating for /dashboard/{admin,tutor,parent}/* route groups. Reads
-// the role from `profiles`, not a client-settable value, so gating can't
-// be bypassed by tampering with anything the browser controls.
+// Refreshes the session cookie and gates dashboard routes by the role in `profiles`.
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
@@ -37,14 +34,7 @@ export async function updateSession(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const isDashboardRoute = path.startsWith("/dashboard");
 
-  // getUser() hits Supabase's auth endpoint on every request this proxy
-  // matches, which is nearly the whole site. A network-level failure
-  // (paused project, unreachable host) throws instead of returning an
-  // error, and an uncaught throw here would crash the proxy itself,
-  // before Next.js ever reaches a page or an error boundary. Failing
-  // open and skipping role-gating lets the request through to the actual
-  // page, where the same Supabase call throws again in a place
-  // app/error.tsx can actually catch and show something useful for.
+  // Fails open if Supabase is unreachable so app/error.tsx can handle it instead of the proxy crashing.
   let user: { id: string } | null = null;
   try {
     const {
@@ -55,9 +45,7 @@ export async function updateSession(request: NextRequest) {
     return supabaseResponse;
   }
 
-  // Redirects need to carry forward any session cookies that getUser() just
-  // refreshed on supabaseResponse. A bare NextResponse.redirect() would
-  // silently drop a just-refreshed token on this request.
+  // Redirects must carry the refreshed session cookies from supabaseResponse.
   function redirect(pathname: string, extraParams?: Record<string, string>) {
     const url = request.nextUrl.clone();
     url.pathname = pathname;

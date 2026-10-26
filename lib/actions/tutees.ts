@@ -11,8 +11,7 @@ export interface ActionState {
   success?: string;
 }
 
-// Slot checkboxes in the form are named "slot" with value "day|start_time".
-// One shared schedule per student, independent of subject.
+// Slot checkboxes are named "slot" with value "day|start_time".
 function parseSlots(formData: FormData): { day: Weekday; startTime: string }[] {
   return formData.getAll("slot").map((raw) => {
     const [day, startTime] = String(raw).split("|");
@@ -87,12 +86,7 @@ export async function createTutee(
   redirect("/dashboard/parent");
 }
 
-// Soft-deletes a student: parent removing their own, or an admin acting on
-// a family's behalf. Any pending or approved claim gets cancelled first, so
-// a tutor never ends up quietly holding a booking for a student that no
-// longer exists. The tutee row itself is never hard-deleted (same reasoning
-// as availability_slots), an admin can still see it and its claim history
-// in the ledger, it just drops out of the parent's and tutor's lists.
+// Soft-deletes a student and cancels their live claims first.
 export async function deleteTutee(
   _prevState: ActionState,
   formData: FormData
@@ -145,11 +139,7 @@ export async function deleteTutee(
   return { success: "Student removed." };
 }
 
-// Clears a deleted student off the admin "All students" table. Visibility
-// only, same pattern as deleteTutee's soft delete and the tutor's dismiss
-// feature: the tutee row stays soft-deleted exactly as it is, and its
-// claim history is untouched in the ledger, this just stops it from
-// rendering in this one table. Shared across every admin account.
+// Hides a deleted student from the admin table, history untouched.
 export async function dismissDeletedTutee(
   _prevState: ActionState,
   formData: FormData
@@ -178,12 +168,7 @@ export async function dismissDeletedTutee(
   return {};
 }
 
-// Resyncs a tutee's subjects and availability to match the submitted form.
-// Unchecking a slot that has a live (pending or approved) claim now cancels
-// that claim instead of silently keeping the slot around. A parent who
-// removes an offered time is telling the tutor it's off the table. Slots
-// are soft-deleted (is_active = false), never hard-deleted, so a cancelled
-// claim's history survives (hard-deleting the slot would cascade-delete it).
+// Syncs subjects and slots to the form. Removing a slot cancels its live claim, and slots are soft-deleted to keep history.
 export async function updateTutee(
   _prevState: ActionState,
   formData: FormData

@@ -2,9 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import type { Database } from "@/lib/types/database";
 
-// Server Component / Server Action / Route Handler client. Reads the
-// session from cookies; writes are swallowed when called from a Server
-// Component that can't set cookies (middleware handles the refresh there).
+// Server-side client that reads the session from cookies.
 export async function createClient() {
   const cookieStore = await cookies();
 
@@ -22,8 +20,7 @@ export async function createClient() {
               cookieStore.set(name, value, options)
             );
           } catch {
-            // Called from a Server Component, where session refresh
-            // already happens in middleware, so this can be ignored.
+            // Server Components can't set cookies, and middleware refreshes the session anyway.
           }
         },
       },

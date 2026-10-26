@@ -9,9 +9,7 @@ export interface ActionState {
   success?: string;
 }
 
-// Promotes or demotes an existing account. Admin-only. An admin can't
-// change their own role here so a solo admin can't lock themselves out
-// by accident.
+// Admin-only role change. Admins can't change their own role.
 export async function updateUserRole(
   _prevState: ActionState,
   formData: FormData
@@ -39,11 +37,7 @@ export async function updateUserRole(
   return { success: "Role updated." };
 }
 
-// Clears an account off the "All accounts" table. Visibility only, same
-// pattern as dismissing a cancelled claim or a deleted student: the
-// account itself is untouched and keeps working exactly as before, this
-// just gets it out of an admin's way. An admin can't dismiss their own
-// account here, same reasoning as the self-role-change block above.
+// Hides an account from the admin table. Admins can't dismiss themselves.
 export async function dismissAccount(
   _prevState: ActionState,
   formData: FormData

@@ -45,9 +45,7 @@ export async function toggleTutorCodeActive(
   return {};
 }
 
-// Clears a deactivated code off the main list, same visibility-only
-// pattern as dismissing a cancelled claim or a deleted student. Only
-// allowed once a code is already deactivated, same precondition as those.
+// Hides a deactivated code from the main list.
 export async function dismissTutorCode(
   _prevState: ActionState,
   formData: FormData

@@ -1,9 +1,4 @@
-// Hand-written to match the migrations in supabase/migrations until a real
-// Supabase project exists. Once connected, regenerate with:
-//   npx supabase gen types typescript --project-id <ref> > lib/types/database.ts
-// (this file gets overwritten, that's fine)
-// The `Relationships: []` entries aren't real foreign key metadata, just
-// what @supabase/postgrest-js expects to type-check embedded queries.
+// Hand-written to match the migrations. Regenerate with `npx supabase gen types typescript --project-id <ref>`.
 
 export type UserRole = "admin" | "tutor" | "parent";
 export type ClaimStatus = "pending" | "approved" | "rejected" | "cancelled";

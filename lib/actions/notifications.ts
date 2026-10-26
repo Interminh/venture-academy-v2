@@ -7,10 +7,7 @@ export interface ActionState {
   success?: string;
 }
 
-// No session exists when someone clicks an unsubscribe link from their
-// email, so this can't go through the normal RLS-backed client. The
-// token itself is the only credential, a random, unguessable value
-// that's never shown anywhere except inside that person's own emails.
+// Unsubscribe links have no session, so the unguessable token is the credential.
 export async function unsubscribeFromNotifications(
   _prevState: ActionState,
   formData: FormData
@@ -33,10 +30,7 @@ export async function unsubscribeFromNotifications(
   return { success: "You won't get any more session notification emails." };
 }
 
-// Same token, opposite direction. There's no separate "resubscribe"
-// link sent anywhere, the unsubscribe page itself offers this once it
-// sees the person is already unsubscribed, so any old notification
-// email's link still works as the way back in.
+// Resubscribes with the same token from the unsubscribe page.
 export async function resubscribeToNotifications(
   _prevState: ActionState,
   formData: FormData

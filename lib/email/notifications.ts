@@ -16,11 +16,7 @@ async function notificationSettingsUrl(token: string): Promise<string> {
   return `${origin}/notifications/unsubscribe?token=${token}`;
 }
 
-// Fired once, right after a claim is approved. One email to the parent
-// ("a tutor has been confirmed"), one to the tutor ("your request has
-// been accepted"), each skipped individually if that person has
-// unsubscribed. Plain text, no links except the required unsubscribe
-// one, this is a courtesy notice, not a marketing email.
+// Emails the parent and tutor after an approval, skipping anyone who unsubscribed.
 export async function sendSessionBookedNotifications({
   parent,
   tutor,

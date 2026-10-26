@@ -1,10 +1,6 @@
 import { Resend } from "resend";
 
-// Plain-text session notifications only, never the password reset flow,
-// that one stays on Supabase Auth's own email path regardless of what's
-// configured here. Silently no-ops without a key so local dev and a
-// project that hasn't set this up yet don't crash on every approval,
-// they just don't send anything.
+// Plain-text session notifications only. No-ops without an API key.
 export async function sendPlainEmail({
   to,
   subject,

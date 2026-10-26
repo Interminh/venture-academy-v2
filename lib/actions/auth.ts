@@ -9,15 +9,7 @@ export interface ActionState {
   success?: string;
 }
 
-// Both parents and tutors sign up through this same form. Role is never
-// read directly off the submitted form, a client can't just request
-// role=tutor. Instead, an optional tutor code is checked server-side
-// through `is_valid_tutor_code`, a security-definer function that can
-// confirm a code is valid without this (unauthenticated) request ever
-// being able to read the codes table itself. No code means parent. A
-// valid code means tutor. An invalid code is rejected outright, so a
-// typo doesn't silently create a parent account for someone who meant
-// to sign up as a tutor.
+// Role comes from an optional tutor code checked server-side, never from the form.
 export async function signUp(
   _prevState: ActionState,
   formData: FormData
@@ -40,13 +32,7 @@ export async function signUp(
 
   const supabase = await createClient();
 
-  // Supabase's own signUp silently "succeeds" with no error and no session
-  // for an already-registered email (anti-enumeration behavior), which
-  // would otherwise show this person a "check your email" message for a
-  // confirmation email that's never coming. Checking first gives a real
-  // answer instead. Requires migration 0007 (`is_email_registered`); if
-  // that hasn't been run yet, fall through to signUp's normal behavior
-  // rather than blocking every signup on an RPC that doesn't exist yet.
+  // Supabase hides duplicate emails on signUp, so check first. Skips if migration 0007 isn't applied.
   const { data: alreadyRegistered, error: checkError } = await supabase.rpc(
     "is_email_registered",
     { input_email: email }
@@ -77,9 +63,7 @@ export async function signUp(
     return { error: error.message };
   }
 
-  // If the project requires email confirmation, signUp succeeds but returns
-  // no session. Redirecting to /dashboard here would just bounce straight
-  // back to /login with no explanation, so tell the user what's next instead.
+  // No session means email confirmation is required, so say so instead of redirecting.
   if (!data.session) {
     return {
       success: "Almost done. Check your email for a confirmation link before logging in.",
@@ -104,9 +88,7 @@ export async function signIn(
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
-    // Needing email confirmation is a different, fixable problem than a
-    // wrong password, and looks identical to the user if we collapse both
-    // into one generic message, so call it out separately.
+    // Unconfirmed email gets its own message, not the generic wrong-password one.
     if (error.code === "email_not_confirmed") {
       return { error: "Please confirm your email first. Check your inbox for the confirmation link." };
     }
@@ -122,11 +104,7 @@ export async function signOut() {
   redirect("/login");
 }
 
-// Sends a recovery link through /auth/callback, which exchanges it for a
-// session and lands on /reset-password. Always returns the same success
-// message regardless of whether the email is registered, so this can't be
-// used to enumerate accounts (unlike signUp's duplicate-email check, this
-// one has no legitimate reason to tell the caller which way it went).
+// Always returns the same message so emails can't be enumerated.
 export async function requestPasswordReset(
   _prevState: ActionState,
   formData: FormData
@@ -149,19 +127,12 @@ export async function requestPasswordReset(
   };
 }
 
-// A `next` value like "@evil.com/path" turns into a valid URL when
-// concatenated with origin (the "@" makes everything before it userinfo,
-// so the browser treats evil.com as the actual host), an open redirect.
-// The app only ever sends "/reset-password" here itself, so anything that
-// doesn't look like a plain same-origin path gets ignored.
+// Only plain same-origin paths are allowed in `next`, to block open redirects.
 function isSafeRedirectPath(path: string): boolean {
   return path.startsWith("/") && !path.startsWith("//") && !path.includes("@");
 }
 
-// Exchanges a password-recovery code for a session, then sends the user to
-// set a new password. Only reached by an explicit click on /auth/callback's
-// confirm button, not by the initial page load, so a link-scanner's
-// automatic GET can't burn the code before the real user gets to it.
+// Exchanges the recovery code on an explicit click so link scanners can't burn it.
 export async function confirmRecovery(formData: FormData) {
   const code = String(formData.get("code") ?? "");
   const requestedNext = String(formData.get("next") ?? "");

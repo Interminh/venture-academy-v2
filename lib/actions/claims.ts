@@ -12,12 +12,7 @@ export interface ActionState {
 
 const UNIQUE_VIOLATION = "23505";
 
-// A tutor claims an open slot for one of the student's needed subjects.
-// A slot itself isn't tied to any subject, that gets chosen here. The
-// partial unique index on claims(slot_id) for pending/approved rows is
-// what actually makes this race-safe: if another tutor claimed it a
-// moment ago, this insert fails and we show a friendly message instead
-// of a stack trace.
+// Claims an open slot. The unique index on claims(slot_id) makes it race-safe.
 export async function submitClaim(
   _prevState: ActionState,
   formData: FormData
@@ -47,13 +42,7 @@ export async function submitClaim(
     .maybeSingle();
   if (!needsSubject) return { error: "This student doesn't need that subject." };
 
-  // A student's weekly cap counts pending claims too, not just approved
-  // ones, so a pile of pending requests can't quietly add up to more
-  // sessions than the family asked for once a director works through
-  // them. This is a check-then-insert, not a database constraint, so two
-  // tutors claiming different slots on the same near-full student at the
-  // exact same moment could both slip through, same tradeoff the rest of
-  // this action already accepts for a club-sized volume of traffic.
+  // Weekly cap counts pending claims too. Check-then-insert, so a rare race can slip through.
   const { data: tutee } = await supabase
     .from("tutees")
     .select("max_weekly_sessions")
@@ -94,11 +83,7 @@ export async function submitClaim(
   return { success: "Claim submitted. A director will review it shortly." };
 }
 
-// Clears a cancelled/rejected claim off the tutor's own "My sessions" list.
-// This is a visibility flag, not a delete, the claims_update_tutor_dismiss
-// RLS policy only allows setting tutor_dismissed_at on the tutor's own
-// claim once it's already cancelled or rejected, so nothing about the
-// claim's history changes for the admin ledger.
+// Hides a cancelled or rejected claim from the tutor's list, history untouched.
 export async function dismissClaim(
   _prevState: ActionState,
   formData: FormData
@@ -126,8 +111,7 @@ export async function dismissClaim(
   return {};
 }
 
-// Tutor self-cancel: only allowed on their own approved claim, enforced by
-// the claims_update_tutor_cancel RLS policy. Reopens the slot to open.
+// Tutor cancels their own approved claim and the slot reopens.
 export async function cancelOwnClaim(
   _prevState: ActionState,
   formData: FormData
@@ -180,9 +164,7 @@ export async function approveClaim(
 
   if (error) return { error: error.message };
 
-  // Notification emails are a courtesy, not part of the approval itself,
-  // a Resend outage or a missing API key should never undo an approval
-  // that already succeeded.
+  // Email failures must never undo an approval.
   try {
     const slot = claim?.availability_slots as unknown as {
       day: Weekday;
@@ -253,11 +235,7 @@ export async function rejectClaim(
   return { success: "Claim rejected." };
 }
 
-// Clears a cancelled/rejected claim off the admin ledger view. Visibility
-// only, same as the tutor's dismissClaim: the row and its full history
-// stay exactly as they are, this just stops it from rendering in the
-// ledger table by default. Shared across every admin account, not scoped
-// to whichever director clicked it.
+// Hides a claim from the admin ledger for every admin, history untouched.
 export async function dismissLedgerClaim(
   _prevState: ActionState,
   formData: FormData
@@ -286,8 +264,7 @@ export async function dismissLedgerClaim(
   return {};
 }
 
-// Admin force-cancel: same reopen behavior as a tutor self-cancel, but it
-// works from any status and is attributed to the admin, not the tutor.
+// Admin cancels from any status, attributed to the admin.
 export async function forceCancelClaim(
   _prevState: ActionState,
   formData: FormData
