@@ -4,9 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-// Subscribes to claim inserts/updates and refreshes the current Server
-// Component tree so a slot's status (Open -> Pending -> Booked) updates
-// live for every tutor watching the same page, without a manual reload.
+// Refreshes the page on claim changes so slot status updates live.
 export function RealtimeRefresh({ table = "claims" }: { table?: string }) {
   const router = useRouter();
 

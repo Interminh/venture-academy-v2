@@ -13,8 +13,7 @@ export interface AgendaItem {
   actions?: React.ReactNode;
 }
 
-// Groups slot rows by day. This replaces the old static 8-row-by-5-day
-// grid with something easier to scan and filter on mobile.
+// Groups slot rows by day.
 export function SlotAgenda({
   items,
   emptyMessage = "Nothing to show here.",

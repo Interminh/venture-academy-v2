@@ -27,10 +27,7 @@ const END_STATE_STYLES: Record<"cancelled" | "rejected", string> = {
   rejected: "bg-status-cancelled-bg text-status-cancelled",
 };
 
-// Compact three-stage tracker showing where a slot sits in its lifecycle
-// (open -> pending -> booked). Cancelled/rejected claims get a separate
-// greyed-out badge instead of a track position since they've dropped out
-// of the normal flow rather than moved through it.
+// Three-stage slot tracker (open, pending, booked). Cancelled and rejected get a grey badge instead.
 export function StatusTrack({
   status,
   className,

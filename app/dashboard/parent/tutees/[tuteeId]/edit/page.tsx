@@ -22,9 +22,7 @@ export default async function EditTuteePage({
         .eq("id", tuteeId)
         .eq("is_active", true)
         .single(),
-      // Joins in the subject even if it's since been deactivated, so a
-      // subject the tutee already needs doesn't silently disappear from
-      // the form and get dropped from tutee_subjects on the next save.
+      // Includes deactivated subjects so a save doesn't silently drop them.
       supabase
         .from("tutee_subjects")
         .select("subject_id, subjects(id, name)")
@@ -42,8 +40,7 @@ export default async function EditTuteePage({
     (slot) => `${slot.day}|${toHHMM(slot.start_time)}` as SlotKey
   );
 
-  // Pending/approved claims on this tutee's own slots, so the picker can
-  // show a parent which times are actually live before they touch them.
+  // Live claims on this tutee's slots, so the picker can show them.
   const { data: statuses } = await supabase
     .from("slot_status")
     .select("day, start_time, status")

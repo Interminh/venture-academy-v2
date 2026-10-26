@@ -23,8 +23,7 @@ export default async function MyClaimsPage() {
       .eq("tutor_id", user!.id)
       .is("tutor_dismissed_at", null)
       .order("requested_at", { ascending: false }),
-    // The view itself only returns rows for tutees this tutor has an
-    // approved claim against, not just this filter.
+    // The view already limits rows to tutees this tutor has an approved claim on.
     supabase.from("tutor_visible_contacts").select("tutee_id, parent_email").eq("tutor_id", user!.id),
     supabase
       .from("tutor_hours")

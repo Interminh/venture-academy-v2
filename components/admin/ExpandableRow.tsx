@@ -3,11 +3,7 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils/cn";
 
-// A table row with a disclosure arrow in the leftmost cell. Expanding
-// reveals a second row spanning the full table width underneath it, used
-// wherever an admin table's summary row needs a per-item detail view
-// (a student's individual slots, a tutor's individual claims) without
-// navigating to a separate page.
+// A table row that expands to a full-width detail row below it.
 export function ExpandableRow({
   children,
   detail,

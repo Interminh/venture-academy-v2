@@ -4,16 +4,7 @@ import { Card } from "@/components/ui/Card";
 import { AuthPageHeader } from "@/components/ui/AuthPageHeader";
 import { Button } from "@/components/ui/Button";
 
-// This used to be a route handler that exchanged the recovery code for a
-// session on GET, straight off the email link. Corporate link scanners
-// (Outlook Safe Links, Defender, etc.) fetch that URL automatically to
-// scan it, which burns the single-use code before the person ever clicks
-// it themselves, so their real click landed on an already-spent code and
-// looked like a broken link.
-//
-// Rendering a plain page here instead has no side effect, so a scanner's
-// GET is harmless. The actual exchange only happens from the form below,
-// which requires a real click/submit that scanners don't perform.
+// A plain page, not a GET handler, so link scanners can't spend the one-time recovery code.
 export default async function AuthCallbackPage({
   searchParams,
 }: {

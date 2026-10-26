@@ -21,9 +21,7 @@ const plexMono = IBM_Plex_Mono({
   weight: ["400", "500"],
 });
 
-// Only fires if the root layout itself throws, global-error replaces the
-// whole document, so unlike app/error.tsx it has to bring its own html,
-// body, fonts, and styles, none of layout.tsx runs underneath it.
+// Fires only if the root layout throws, so it brings its own html, body, and styles.
 export default function GlobalError({
   error,
   unstable_retry,

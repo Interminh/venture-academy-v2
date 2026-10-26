@@ -1,8 +1,6 @@
 import { cn } from "@/lib/utils/cn";
 
-// Deterministic palette pick from the name so the same person always gets
-// the same color, without needing to store one. Real photos can replace
-// this later via the optional `src` prop without changing any call sites.
+// Picks a palette color from the name so a person always gets the same one.
 const PALETTE = [
   "bg-teal-100 text-teal-800",
   "bg-amber-100 text-amber-800",

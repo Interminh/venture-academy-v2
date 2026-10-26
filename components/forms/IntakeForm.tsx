@@ -38,9 +38,7 @@ export function IntakeForm({
     new Set(existing?.subjectIds ?? [])
   );
   const [slots, setSlots] = useState<Set<SlotKey>>(new Set(existing?.slots ?? []));
-  // Server Actions reset every uncontrolled field once the action resolves,
-  // even on a validation error, so a forgotten subject checkbox would
-  // otherwise wipe the name/grade the parent already filled in.
+  // Server Actions reset the form on error, so keep typed values in state.
   const [firstName, setFirstName] = useState(existing?.first_name ?? "");
   const [grade, setGrade] = useState<string>(existing?.grade?.toString() ?? "");
   const [notes, setNotes] = useState(existing?.notes ?? "");

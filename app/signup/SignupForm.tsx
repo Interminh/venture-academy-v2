@@ -11,9 +11,7 @@ const initialState: ActionState = {};
 export function SignupForm() {
   const [state, formAction, pending] = useActionState(signUp, initialState);
   const [isTutor, setIsTutor] = useState(false);
-  // Server Actions reset every field once the action resolves, even on
-  // error, so an invalid tutor code or a rejected password would otherwise
-  // wipe the name/email/code the user already typed correctly.
+  // Server Actions reset the form on error, so keep typed values in state.
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [tutorCode, setTutorCode] = useState("");

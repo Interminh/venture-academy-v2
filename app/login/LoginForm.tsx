@@ -10,10 +10,7 @@ const initialState: ActionState = {};
 
 export function LoginForm() {
   const [state, formAction, pending] = useActionState(signIn, initialState);
-  // Server Actions reset every field in the form (including email) once the
-  // action resolves, success or failure. Keeping email in React state
-  // instead of letting it be uncontrolled means a wrong password doesn't
-  // also force the user to retype their email.
+  // Server Actions reset the form, so keep email in state to avoid retyping after a wrong password.
   const [email, setEmail] = useState("");
 
   return (

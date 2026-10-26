@@ -1,10 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-// Top-left logo bar shared by every standalone auth-adjacent page (login,
-// signup, password reset/forgot, notification settings), so there's
-// always a one-click way back to the marketing homepage instead of a
-// dead end.
+// Logo bar shared by auth pages, linking back to the homepage.
 export function AuthPageHeader() {
   return (
     <header className="border-b border-border bg-white px-6 py-4">

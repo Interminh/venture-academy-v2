@@ -1,9 +1,4 @@
-// Collapsible disclosure for dismissed items. Closed by default so a
-// cleared-out claim or student stays out of the way, but nothing is ever
-// actually hidden from the admin, just tucked behind this arrow. Native
-// <details>/<summary> instead of a client component: no JS needed to
-// track open/closed state, and it stays keyboard- and screen-reader
-// accessible for free.
+// Collapsed-by-default section for dismissed items, using native <details>.
 export function DismissedPanel({
   count,
   children,

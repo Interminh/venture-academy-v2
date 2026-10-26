@@ -3,12 +3,7 @@
 import { Badge } from "@/components/ui/Badge";
 import { Button, ButtonLink } from "@/components/ui/Button";
 
-// Shown when a Supabase call fails outright (paused project, unreachable
-// host) instead of returning a normal error response. Used by both
-// app/error.tsx (route-segment failures) and app/global-error.tsx (root
-// layout failures), which is why the retry behavior is passed in rather
-// than hardcoded, error.tsx re-renders the segment, global-error.tsx has
-// to reload the page instead.
+// Shown when Supabase fails outright. Retry behavior is passed in because error.tsx and global-error.tsx differ.
 export function DatabaseUnavailable({
   digest,
   onRetry,

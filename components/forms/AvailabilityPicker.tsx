@@ -13,26 +13,14 @@ const CHECKED_STYLES: Record<"open" | SlotLiveStatus, string> = {
   booked: "border-status-booked bg-status-booked",
 };
 
-// A slot that started pending/booked keeps that color as a transparent
-// outline even after being unchecked, a reminder of exactly what's about
-// to be cancelled, rather than fading back to the plain "never claimed"
-// green outline like a slot that was never live to begin with.
+// Unchecked slots keep an outline of their claim color to show what will be cancelled.
 const UNCHECKED_STYLES: Record<"open" | SlotLiveStatus, string> = {
   open: "border-status-open/30 bg-transparent hover:border-status-open/60",
   pending: "border-status-pending/50 bg-status-pending/10 hover:border-status-pending/80",
   booked: "border-status-booked/50 bg-status-booked/10 hover:border-status-booked/80",
 };
 
-// A student's single weekly availability grid: Mon-Fri x half-hour start
-// times. Each checked cell becomes a `slot` form field valued "day|time".
-// Availability isn't tied to a subject. A tutor picks the subject when
-// they claim a specific time.
-//
-// A checked cell's color reflects whatever a tutor has actually done with
-// it, plain green means nobody's claimed it, yellow means a claim is
-// pending, blue means it's booked, so a parent editing this grid can see
-// at a glance which times are live before touching them (unchecking one
-// auto-cancels whatever claim is on it).
+// Weekly availability grid, Mon-Fri by half-hour. Checked cells post as "day|time" and are colored by claim status.
 export function AvailabilityPicker({
   selected,
   onToggle,
