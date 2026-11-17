@@ -3,9 +3,9 @@ import { Card } from "@/components/ui/Card";
 
 const TEAM = [
   {
-    name: "Divyata Sherawat",
+    name: "Andrew Liang",
     role: "Secretary",
-    bio: "Rising senior at Interlake, passionate about dance and education. Favorite subject: physics.",
+    bio: "Rising junior at Interlake, passionate about swimming and education. Favorite subject: physics.",
   },
   {
     name: "Minh Do",
