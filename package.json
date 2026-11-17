@@ -1,12 +1,15 @@
 {
   "name": "venture-academy-v2",
   "version": "0.1.0",
+  "description": "Free K-8 tutoring scheduler for Venture Academy Tutors.",
+  "license": "Apache-2.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "playwright test"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",
