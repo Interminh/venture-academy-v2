@@ -3,10 +3,10 @@
 Surface map produced by reading `lib/actions/*`, `app/**`, `components/**`,
 `lib/supabase/middleware.ts`, `proxy.ts`, and `supabase/migrations/*`.
 
-The Playwright suite (`tests/e2e/*.spec.ts`) was run against production
-(`www.ventureacademytutors.org`) using disposable `@example.com` test
-accounts, cleaned up afterward via `tests/support/cleanup.mjs`. Results are
-in the **Result** column below and summarized at the end.
+The Playwright suite (`tests/e2e/*.spec.ts`) was run against a live
+deployment using disposable `@example.com` test accounts, cleaned up
+afterward via `tests/support/cleanup.mjs`. Results are in the **Result**
+column below and summarized at the end.
 
 ## App surface
 
