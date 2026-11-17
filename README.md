@@ -9,6 +9,17 @@ directors to approve and manage bookings.
 New here? [`SETUP.md`](./SETUP.md) walks through creating a Supabase
 project, running the migrations, and testing the full flow locally.
 
+## Screenshots
+
+![Landing page](docs/screenshots/landing.png)
+
+| Log in | Sign up |
+| --- | --- |
+| ![Log in page](docs/screenshots/login.png) | ![Sign up page](docs/screenshots/signup.png) |
+
+The parent, tutor, and admin dashboards sit behind a login, so they're not
+shown here. [`SETUP.md`](./SETUP.md) shows how to create accounts and see them.
+
 ## How it works
 
 1. A parent signs up and adds their student: grade, subjects needed, and
@@ -70,13 +81,23 @@ indicator used everywhere a slot's state shows.
 
 ## Getting started
 
+You need Node 20.9 or newer and a free [Supabase](https://supabase.com)
+project.
+
 ```bash
+git clone <this repo>
+cd venture-academy-v2
 npm install
+cp .env.example .env.local   # fill in your Supabase keys
 npm run dev
 ```
 
-The app needs a Supabase project to do more than render the login page.
-See [`SETUP.md`](./SETUP.md).
+Then open `http://localhost:3000`. Before anything works you also have to
+run the SQL in `supabase/migrations/` against your project, and make the
+first admin by hand. [`SETUP.md`](./SETUP.md) covers both, step by step.
+
+Other scripts: `npm run build` and `npm start` for a production build,
+`npm run lint` for ESLint.
 
 ## Database
 
@@ -100,14 +121,21 @@ project: real signups, claims, and admin actions, plus direct API calls
 that check RLS boundaries the UI never exposes.
 
 ```bash
-cp .env.test.example .env.test   # add your project's URL, anon key, and service-role key
+cp .env.test.example .env.test   # add your project's keys and an admin login
 npx playwright install chromium
-npx playwright test
+npm run dev                      # in another terminal
+npm test
 ```
 
-The suite creates `@example.com` test accounts and removes them with
-`tests/support/cleanup.mjs`. Don't point it at a database with real users
-you care about without running that cleanup.
+Tests hit `http://localhost:3000` unless `E2E_BASE_URL` is set. The admin
+login in `.env.test` has to belong to an account that already has the
+`admin` role.
+
+The suite creates `@example.com` test accounts and subjects. Clean up with
+`node tests/support/cleanup.mjs` (add `--dry-run` to preview). It deletes
+by pattern: records whose name starts with `QA` and accounts at
+`@example.com`. Use a throwaway Supabase project if you can, not one with
+real families in it.
 
 ## Rate limits
 
@@ -157,9 +185,9 @@ you care about without running that cleanup.
 
 ## License
 
-MIT. See [`LICENSE`](./LICENSE).
+Apache 2.0. See [`LICENSE`](./LICENSE).
 
-## Team
+## Author
 
-Built and maintained by the Venture Academy Tutors club director and tech
-lead at Interlake High School: Minh Do
+Minh Do, club director and tech lead for Venture Academy Tutors at
+Interlake High School.

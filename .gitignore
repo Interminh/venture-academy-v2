@@ -16,7 +16,7 @@
 /tests/report/
 /playwright-report/
 
-# database backups (contain real user data — never commit)
+# database backups (contain real user data, never commit)
 /backups/
 
 # next.js
