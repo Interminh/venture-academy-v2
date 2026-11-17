@@ -9,6 +9,17 @@ directors to approve and manage bookings.
 New here? [`SETUP.md`](./SETUP.md) walks through creating a Supabase
 project, running the migrations, and testing the full flow locally.
 
+## Screenshots
+
+![Landing page](docs/screenshots/landing.png)
+
+| Log in | Sign up |
+| --- | --- |
+| ![Log in page](docs/screenshots/login.png) | ![Sign up page](docs/screenshots/signup.png) |
+
+The parent, tutor, and admin dashboards sit behind a login, so they're not
+shown here. [`SETUP.md`](./SETUP.md) shows how to create accounts and see them.
+
 ## How it works
 
 1. A parent signs up and adds their student: grade, subjects needed, and
