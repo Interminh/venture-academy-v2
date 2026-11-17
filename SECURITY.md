@@ -1,6 +1,6 @@
 # Security Policy
 
-This app handles contact details and schedules for families and minors, so
+This app handles contact details and schedules, so
 security reports are taken seriously.
 
 ## Reporting a vulnerability
