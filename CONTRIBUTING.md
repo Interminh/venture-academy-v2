@@ -40,10 +40,13 @@ of the [README](./README.md).
 
 ## Code
 
-- **Check the caller on the server.** Every Server Action re-checks the
-  user's role. Don't rely on the UI hiding a button.
-- **RLS is the real access control.** If you add a table, turn on Row Level
-  Security and write the policies in the same migration.
+- **Don't trust the UI.** Hiding a button isn't access control. Actions
+  confirm who's calling, but Row Level Security is what decides what that
+  user can read or write, admin actions included.
+- **New tables get RLS in the same migration.** Turn it on and write the
+  policies there. Then test the policy by calling the Supabase API
+  directly, not only through the UI. That's how the privilege escalation
+  fixed in `0017` was found.
 - **Keep history.** Claims, students, accounts, and tutor codes are
   soft-deleted or dismissed, not removed. Follow that pattern for new data
   that matters.
@@ -60,8 +63,10 @@ Migrations live in `supabase/migrations/` and run in numeric order.
 2. Keep it additive: new tables, columns, and policies. Dropping a column
    or adding a `not null` column without a default can fail on a database
    that already has rows.
-3. New tables and functions need grants. See `0003_grants.sql` and
-   `0004_tutor_signup_codes.sql`.
+3. New tables pick up their grants from the defaults set in
+   `0003_grants.sql`. A function that signed-in or signed-out users call
+   needs an explicit `grant execute`, and a `security definer` one should
+   set `search_path`. `0004_tutor_signup_codes.sql` shows both.
 4. Update `lib/types/database.ts` to match. It's hand-written, or you can
    regenerate it as described in `SETUP.md`.
 5. Say in the PR what you ran it against, since a reviewer can't see your
